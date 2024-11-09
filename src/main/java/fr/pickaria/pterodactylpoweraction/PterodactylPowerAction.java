@@ -71,12 +71,10 @@ public class PterodactylPowerAction {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        TranslationRegistry registry = TranslationRegistry.create(Key.key("pickaria:power_action"));
-
-        ResourceBundle bundle = ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.ENGLISH, UTF8ResourceBundleControl.get());
-        registry.registerAll(Locale.FRENCH, bundle, true);
-        registry.registerAll(Locale.ENGLISH, bundle, true);
-        GlobalTranslator.translator().addSource(registry);
+        initializeTranslator(
+                ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.FRENCH, UTF8ResourceBundleControl.get()),
+                ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.ENGLISH, UTF8ResourceBundleControl.get())
+        );
 
         try {
             ConnectionListener listener = new ConnectionListener(configuration, logger, proxy, this);
@@ -84,5 +82,14 @@ public class PterodactylPowerAction {
         } catch (NoSuchElementException e) {
             logger.error("Error loading listener", e);
         }
+    }
+
+    private void initializeTranslator(ResourceBundle... bundles) {
+        TranslationRegistry registry = TranslationRegistry.create(Key.key("pickaria:power_action"));
+        for (ResourceBundle bundle : bundles) {
+            registry.registerAll(bundle.getLocale(), bundle, true);
+        }
+        registry.defaultLocale(Locale.ENGLISH);
+        GlobalTranslator.translator().addSource(registry);
     }
 }

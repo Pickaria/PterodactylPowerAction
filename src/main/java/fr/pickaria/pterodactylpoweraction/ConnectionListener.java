@@ -14,6 +14,7 @@ import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.Scheduler;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -94,7 +95,9 @@ public class ConnectionListener {
                 event.setResult(ServerPreConnectEvent.ServerResult.allowed(this.waitingServer));
             }
             api.start(originalServerName).thenAccept((started) -> redirectPlayer(event.getPlayer(), originalServer));
-            event.getPlayer().sendMessage(Component.translatable("server.is.off.redirecting.in.progress", Component.text(originalServerName)));
+
+            Component message = Component.translatable("starting.server", Component.text(originalServerName, NamedTextColor.GOLD)).color(NamedTextColor.GRAY);
+            event.getPlayer().sendMessage(message);
         } catch (CancellationException | InterruptedException exception) {
             // Something else bad has happened
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
@@ -171,7 +174,8 @@ public class ConnectionListener {
                 shutdownServer(server, false);
             }
         } catch (CancellationException | ExecutionException | InterruptedException exception) {
-            player.sendMessage(Component.translatable("failed.to.start.server", Component.text(server.getServerInfo().getName())));
+            Component message = Component.translatable("failed.to.start.server", Component.text(server.getServerInfo().getName(), NamedTextColor.GRAY)).color(NamedTextColor.RED);
+            player.sendMessage(message);
         }
     }
 }
