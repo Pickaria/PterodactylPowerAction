@@ -4,9 +4,9 @@ import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.PowerActionAPI;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -22,30 +22,26 @@ public class ShellCommandAPI implements PowerActionAPI {
     @Override
     public CompletableFuture<Void> stop(String server) {
         logger.info("Stopping server {}", server);
-        List<String> commands = configuration.getStopCommands(server);
-        return runCommands(commands);
+        Configuration.PowerCommands powerCommands = configuration.getPowerCommands(server);
+        return runCommands(powerCommands.workingDirectory(), powerCommands.stop());
     }
 
     @Override
     public CompletableFuture<Void> start(String server) {
         logger.info("Starting server {}", server);
-        List<String> commands = configuration.getStartCommands(server);
-        return runCommands(commands);
+        Configuration.PowerCommands powerCommands = configuration.getPowerCommands(server);
+        return runCommands(powerCommands.workingDirectory(), powerCommands.start());
     }
 
-    private CompletableFuture<Void> runCommands(List<String> commands) {
+    private CompletableFuture<Void> runCommands(Optional<String> workingDirectory, String command) {
         return CompletableFuture.runAsync(() -> {
-            for (String command : commands) {
-                logger.info("Executing command: {}", command);
-                ProcessBuilder pb = new ProcessBuilder(command.split(" "));
-                try {
-                    Process process = pb.start().onExit().get();
-                    String finalString = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                    logger.info("Command result: {}", finalString);
-                } catch (IOException | ExecutionException | InterruptedException e) {
-                    logger.error(e.getMessage(), e);
-                    throw new RuntimeException(e);
-                }
+            ProcessBuilder pb = new ProcessBuilder(command.split(" "));
+            workingDirectory.ifPresent((value) -> pb.directory(new File(value)));
+            try {
+                pb.start().onExit().get();
+            } catch (IOException | ExecutionException | InterruptedException e) {
+                logger.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
         });
     }

@@ -1,7 +1,7 @@
 package fr.pickaria.pterodactylpoweraction;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Optional;
 
 public interface Configuration {
     APIType getAPIType();
@@ -12,13 +12,14 @@ public interface Configuration {
 
     String getPterodactylServerIdentifier(String serverName);
 
-    List<String> getStartCommands(String serverName);
-
-    List<String> getStopCommands(String serverName);
+    PowerCommands getPowerCommands(String serverName);
 
     String getWaitingServerName();
 
     Duration getMaximumPingDuration();
 
     Duration getShutdownAfterDuration();
+
+    record PowerCommands(Optional<String> workingDirectory, String start, String stop) {
+    }
 }

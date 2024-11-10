@@ -37,19 +37,17 @@ Edit the plugin's configuration file to include your Pterodactyl credentials.
 If you don't have a Pterodactyl panel, and you are running servers directly from the Linux shell, you can modify the
 plugin's configuration to instead run shell commands.
 
-Here is an example using docker compose to manager servers, assuming the `docker-compose.yml` file is in the same
-directory as your Velocity proxy.
-
+Here is an example using docker compose to manager servers.
 Please note that the `cd` command will not work.
 
 ```yaml
 type: "shell"
 servers:
   survival:
-    start:
-      - docker compose start survival
-    stop:
-      - docker compose stop survival
+    # "working_directory" can be omitted and the current working directory will be used instead
+    working_directory: /path/to/server
+    start: docker compose start survival
+    stop: docker compose stop survival
 waiting_server_name: "limbo"
 maximum_ping_duration: 60 # in seconds
 shutdown_after_duration: 3600 # in seconds

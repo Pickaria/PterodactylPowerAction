@@ -10,10 +10,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
@@ -50,16 +49,6 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public List<String> getStartCommands(String serverName) {
-        return getPowerCommands(serverName).start;
-    }
-
-    @Override
-    public List<String> getStopCommands(String serverName) {
-        return getPowerCommands(serverName).stop;
-    }
-
-    @Override
     public String getWaitingServerName() {
         return (String) config.get("waiting_server_name");
     }
@@ -76,15 +65,8 @@ public class YamlConfiguration implements Configuration {
         return Duration.ofSeconds(seconds);
     }
 
-    private @NotNull Object getServerConfiguration(String serverName) throws NoSuchElementException {
-        Map<String, Object> servers = (Map<String, Object>) config.get("servers");
-        if (servers.containsKey(serverName)) {
-            return servers.get(serverName);
-        }
-        throw new NoSuchElementException("Server " + serverName + " not found in the configuration");
-    }
-
-    private @NotNull PowerCommands getPowerCommands(String serverName) {
+    @Override
+    public @NotNull PowerCommands getPowerCommands(String serverName) {
         Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
 
         if (!serverConfiguration.containsKey("start")) {
@@ -95,23 +77,18 @@ public class YamlConfiguration implements Configuration {
             throw new NoSuchElementException("'servers." + serverName + ".stop' is missing from the configuration file");
         }
 
-        List<String> startCommands = getCommands(serverConfiguration.get("start"));
-        List<String> stopCommands = getCommands(serverConfiguration.get("stop"));
+        Optional<String> workingDirectory = Optional.ofNullable((String) serverConfiguration.get("working_directory"));
+        String startCommands = (String) serverConfiguration.get("start");
+        String stopCommands = (String) serverConfiguration.get("stop");
 
-        return new PowerCommands(startCommands, stopCommands);
+        return new PowerCommands(workingDirectory, startCommands, stopCommands);
     }
 
-    private @NotNull List<String> getCommands(Object commands) {
-        if (commands instanceof List) {
-            return (List<String>) commands;
-        } else if (commands instanceof String) {
-            List<String> list = new ArrayList<>();
-            list.add((String) commands);
-            return list;
+    private @NotNull Object getServerConfiguration(String serverName) throws NoSuchElementException {
+        Map<String, Object> servers = (Map<String, Object>) config.get("servers");
+        if (servers.containsKey(serverName)) {
+            return servers.get(serverName);
         }
-        throw new IllegalArgumentException("Power command type is not supported" + commands.getClass());
-    }
-
-    private record PowerCommands(List<String> start, List<String> stop) {
+        throw new NoSuchElementException("Server " + serverName + " not found in the configuration");
     }
 }
