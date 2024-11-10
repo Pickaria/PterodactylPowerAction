@@ -12,7 +12,6 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.Scheduler;
-import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
@@ -40,13 +39,14 @@ public class ConnectionListener {
             Configuration configuration,
             Logger logger,
             ProxyServer proxy,
-            PterodactylPowerAction plugin
+            PterodactylPowerAction plugin,
+            PowerActionAPI api
     ) {
         this.logger = logger;
         this.proxy = proxy;
         this.plugin = plugin;
         this.configuration = configuration;
-        this.api = new PterodactylAPI(logger, configuration);
+        this.api = api;
 
         String waitingServerName = configuration.getWaitingServerName();
         Optional<RegisteredServer> server = proxy.getServer(waitingServerName);

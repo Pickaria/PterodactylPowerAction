@@ -1,3 +1,4 @@
+type: "pterodactyl" # Can also be "shell", see the README for more information
 # Create a new client API key which can be found under "Account Settings" then " API Credentials", the URL path should be https://pterodactyl.test/account/api.
 pterodactyl_api_key: "ptlc_xxx"
 pterodactyl_client_api_base_url: "https://pterodactyl.test/api/client" # No trailing slash

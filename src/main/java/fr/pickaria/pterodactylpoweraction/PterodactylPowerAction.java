@@ -6,6 +6,8 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
+import fr.pickaria.pterodactylpoweraction.api.ShellCommandAPI;
 import fr.pickaria.pterodactylpoweraction.config.YamlConfiguration;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.translation.GlobalTranslator;
@@ -77,11 +79,24 @@ public class PterodactylPowerAction {
         );
 
         try {
-            ConnectionListener listener = new ConnectionListener(configuration, logger, proxy, this);
+            PowerActionAPI api = initializeAPI();
+            ConnectionListener listener = new ConnectionListener(configuration, logger, proxy, this, api);
             proxy.getEventManager().register(this, listener);
         } catch (NoSuchElementException e) {
             logger.error("Error loading listener", e);
+        } catch (IllegalArgumentException e) {
+            logger.error("Cannot load the configuration file", e);
         }
+    }
+
+    private PowerActionAPI initializeAPI() throws IllegalArgumentException {
+        if (configuration.getAPIType() == APIType.PTERODACTYL) {
+            return new PterodactylAPI(logger, configuration);
+        }
+        if (configuration.getAPIType() == APIType.SHELL) {
+            return new ShellCommandAPI(logger, configuration);
+        }
+        throw new IllegalArgumentException("Unsupported API type: " + configuration.getAPIType());
     }
 
     private void initializeTranslator(ResourceBundle... bundles) {

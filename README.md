@@ -32,6 +32,29 @@ Install the plugin on your Velocity proxy, a default configuration file will be 
 
 Edit the plugin's configuration file to include your Pterodactyl credentials.
 
+### Shell commands
+
+If you don't have a Pterodactyl panel, and you are running servers directly from the Linux shell, you can modify the
+plugin's configuration to instead run shell commands.
+
+Here is an example using docker compose to manager servers, assuming the `docker-compose.yml` file is in the same
+directory as your Velocity proxy.
+
+Please note that the `cd` command will not work.
+
+```yaml
+type: "shell"
+servers:
+  survival:
+    start:
+      - docker compose start survival
+    stop:
+      - docker compose stop survival
+waiting_server_name: "limbo"
+maximum_ping_duration: 60 # in seconds
+shutdown_after_duration: 3600 # in seconds
+```
+
 ## Motivations
 
 I am running Minecraft servers on dedicated hardware at home, and I wanted to save energy costs by stopping empty
