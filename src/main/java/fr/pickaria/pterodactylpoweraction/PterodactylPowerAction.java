@@ -80,7 +80,8 @@ public class PterodactylPowerAction {
 
         try {
             PowerActionAPI api = initializeAPI();
-            ConnectionListener listener = new ConnectionListener(configuration, logger, proxy, this, api);
+            ShutdownManager shutdownManager = new ShutdownManager(proxy, this, api, configuration);
+            ConnectionListener listener = new ConnectionListener(configuration, proxy, api, shutdownManager);
             proxy.getEventManager().register(this, listener);
         } catch (NoSuchElementException e) {
             logger.error("Error loading listener", e);
