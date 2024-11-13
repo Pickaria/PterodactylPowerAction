@@ -2,14 +2,17 @@ package fr.pickaria.pterodactylpoweraction;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.player.ServerPreConnectEvent;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class ConnectionListener {
+    private final Logger logger;
     private final PowerActionAPI api;
     private final RegisteredServer waitingServer;
     private final Configuration configuration;
@@ -28,10 +32,12 @@ public class ConnectionListener {
     ConnectionListener(
             Configuration configuration,
             ProxyServer proxy,
+            Logger logger,
             PowerActionAPI api,
             ShutdownManager shutdownManager
     ) {
         this.configuration = configuration;
+        this.logger = logger;
         this.api = api;
         this.shutdownManager = shutdownManager;
 
@@ -46,6 +52,7 @@ public class ConnectionListener {
 
     @Subscribe()
     public void onServerConnected(ServerConnectedEvent event) {
+        logger.debug("Player {} connected", event.getPlayer().getUsername());
         Optional<RegisteredServer> previousServer = event.getPreviousServer();
         // Check if we can shut down the previous server once the player has been redirected
         // This applies to redirection if the server is already running
@@ -97,9 +104,21 @@ public class ConnectionListener {
 
     @Subscribe()
     public void onDisconnect(DisconnectEvent event) {
-        Optional<ServerConnection> serverConnection = event.getPlayer().getCurrentServer();
+        logger.debug("Player {} disconnected", event.getPlayer().getUsername());
+        stopServer(event.getPlayer());
+    }
+
+    @Subscribe()
+    public void onKicked(KickedFromServerEvent event) {
+        logger.debug("Player {} got kicked", event.getPlayer().getUsername());
+        stopServer(event.getPlayer());
+    }
+
+    private void stopServer(Player player) {
+        Optional<ServerConnection> serverConnection = player.getCurrentServer();
         if (serverConnection.isPresent()) {
             RegisteredServer currentServer = serverConnection.get().getServer();
+            logger.debug("Trying to stop server {}", currentServer.getServerInfo().getName());
             shutdownManager.shutdownServer(currentServer, true);
         }
     }
