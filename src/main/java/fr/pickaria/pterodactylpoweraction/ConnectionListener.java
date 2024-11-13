@@ -112,6 +112,10 @@ public class ConnectionListener {
     public void onKicked(KickedFromServerEvent event) {
         logger.debug("Player {} got kicked", event.getPlayer().getUsername());
         stopServer(event.getPlayer());
+
+        // Redirect the player to the waiting server
+        Component message = event.getServerKickReason().orElse(Component.translatable("kick.generic.message"));
+        event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, message));
     }
 
     private void stopServer(Player player) {
