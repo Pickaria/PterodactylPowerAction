@@ -33,15 +33,18 @@ public class StartingServer implements ForwardingAudience {
      * If the server is already in a starting state, the player will be redirected alongside the other waiting players.
      *
      * @param player Player to add to the waiting room
+     * @return `true` if the player has been added to the waiting list
      */
-    public void addPlayer(Player player) {
-        waitingPlayers.add(player);
+    public boolean addPlayer(Player player) {
+        boolean added = waitingPlayers.add(player);
 
         if (!isStarting) {
             isStarting = true;
             String serverName = server.getServerInfo().getName();
             api.start(serverName).thenAccept((started) -> pingUntilUpAndRedirectPlayers());
         }
+
+        return added;
     }
 
     private void pingUntilUpAndRedirectPlayers() {

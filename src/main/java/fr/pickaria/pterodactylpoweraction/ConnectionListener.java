@@ -88,19 +88,22 @@ public class ConnectionListener {
             }
 
             String originalServerName = originalServer.getServerInfo().getName();
+            boolean playerAddedToWaitingList;
 
             // This is cached so that we don't ping the same server for every player that is waiting for it to start
             if (startingServers.containsKey(originalServerName)) {
-                startingServers.get(originalServerName).addPlayer(event.getPlayer());
+                playerAddedToWaitingList = startingServers.get(originalServerName).addPlayer(event.getPlayer());
             } else {
                 StartingServer startingServer = new StartingServer(originalServer, api, configuration, shutdownManager);
-                startingServer.addPlayer(event.getPlayer());
+                playerAddedToWaitingList = startingServer.addPlayer(event.getPlayer());
                 startingServers.put(originalServerName, startingServer);
                 // TODO: Should we clear the entry from the map once the server is started?
             }
 
-            Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
-            event.getPlayer().sendMessage(message);
+            if (playerAddedToWaitingList) {
+                Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
+                event.getPlayer().sendMessage(message);
+            }
         } catch (CancellationException | InterruptedException exception) {
             // Something else bad has happened
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
