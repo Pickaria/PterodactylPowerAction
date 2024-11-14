@@ -66,6 +66,12 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
+    public boolean getRedirectToWaitingServerOnKick() {
+        String key = "redirect_to_waiting_server_on_kick";
+        return config.containsKey(key) && (boolean) config.get(key);
+    }
+
+    @Override
     public @NotNull PowerCommands getPowerCommands(String serverName) {
         Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
 

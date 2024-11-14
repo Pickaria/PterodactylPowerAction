@@ -16,6 +16,9 @@ automatically redirected once the server is ready.
 
 If the server fails to start, the player will be informed to try again.
 
+This plugin is also able to redirect your player that has been kicked from a backend server to the waiting server, this
+is toggleable in the configuration file.
+
 ## Configuration
 
 ### Pterodactyl Panel
@@ -49,6 +52,7 @@ servers:
 waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
 maximum_ping_duration: 60 # in seconds
 shutdown_after_duration: 3600 # in seconds
+redirect_to_waiting_server_on_kick: true
 ```
 
 ### Shell commands
@@ -66,12 +70,13 @@ type: "shell"
 servers:
   survival:
     # "working_directory" can be omitted and the current working directory will be used instead
-    working_directory: /path/to/server
+    working_directory: /path/to/docker/compose
     start: docker compose start survival
     stop: docker compose stop survival
 waiting_server_name: "limbo"
 maximum_ping_duration: 60 # in seconds
 shutdown_after_duration: 3600 # in seconds
+redirect_to_waiting_server_on_kick: true
 ```
 
 ## Motivations

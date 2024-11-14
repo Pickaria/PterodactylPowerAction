@@ -10,8 +10,12 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
+import fr.pickaria.messager.MessageComponent;
+import fr.pickaria.messager.MessageType;
+import fr.pickaria.messager.Messager;
+import fr.pickaria.messager.components.Text;
+import fr.pickaria.pterodactylpoweraction.component.RunCommand;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -28,6 +32,7 @@ public class ConnectionListener {
     private final Configuration configuration;
     private final Map<String, StartingServer> startingServers = new HashMap<>();
     private final ShutdownManager shutdownManager;
+    private final Messager messager;
 
     ConnectionListener(
             Configuration configuration,
@@ -40,6 +45,7 @@ public class ConnectionListener {
         this.logger = logger;
         this.api = api;
         this.shutdownManager = shutdownManager;
+        this.messager = new Messager();
 
         String waitingServerName = configuration.getWaitingServerName();
         Optional<RegisteredServer> server = proxy.getServer(waitingServerName);
@@ -52,7 +58,6 @@ public class ConnectionListener {
 
     @Subscribe()
     public void onServerConnected(ServerConnectedEvent event) {
-        logger.debug("Player {} connected", event.getPlayer().getUsername());
         Optional<RegisteredServer> previousServer = event.getPreviousServer();
         // Check if we can shut down the previous server once the player has been redirected
         // This applies to redirection if the server is already running
@@ -94,7 +99,7 @@ public class ConnectionListener {
                 // TODO: Should we clear the entry from the map once the server is started?
             }
 
-            Component message = Component.translatable("starting.server", Component.text(originalServerName, NamedTextColor.GOLD)).color(NamedTextColor.GRAY);
+            Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
             event.getPlayer().sendMessage(message);
         } catch (CancellationException | InterruptedException exception) {
             // Something else bad has happened
@@ -104,25 +109,33 @@ public class ConnectionListener {
 
     @Subscribe()
     public void onDisconnect(DisconnectEvent event) {
-        logger.debug("Player {} disconnected", event.getPlayer().getUsername());
         stopServer(event.getPlayer());
     }
 
     @Subscribe()
     public void onKicked(KickedFromServerEvent event) {
-        logger.debug("Player {} got kicked", event.getPlayer().getUsername());
         stopServer(event.getPlayer());
 
         // Redirect the player to the waiting server
-        Component message = event.getServerKickReason().orElse(Component.translatable("kick.generic.message"));
-        event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, message));
+        if (configuration.getRedirectToWaitingServerOnKick() && event.getServer() != this.waitingServer) {
+            event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickReasonMessage(event)));
+        }
+    }
+
+    private Component getKickReasonMessage(KickedFromServerEvent event) {
+        Optional<Component> serverKickReason = event.getServerKickReason();
+        String serverName = event.getServer().getServerInfo().getName();
+        String serverCommand = "/server " + serverName;
+        Component serverNameComponent = Component.text(serverName);
+        MessageComponent goBack = new RunCommand(serverCommand, Component.translatable("go.back.command", serverNameComponent));
+        return serverKickReason.map(component -> messager.format(MessageType.INFO, "kick.reason.message", new Text(serverNameComponent), new Text(component), goBack))
+                .orElseGet(() -> messager.format(MessageType.INFO, "kick.generic.message", new Text(serverNameComponent), goBack));
     }
 
     private void stopServer(Player player) {
         Optional<ServerConnection> serverConnection = player.getCurrentServer();
         if (serverConnection.isPresent()) {
             RegisteredServer currentServer = serverConnection.get().getServer();
-            logger.debug("Trying to stop server {}", currentServer.getServerInfo().getName());
             shutdownManager.shutdownServer(currentServer, true);
         }
     }

@@ -20,6 +20,8 @@ public interface Configuration {
 
     Duration getShutdownAfterDuration();
 
+    boolean getRedirectToWaitingServerOnKick();
+
     record PowerCommands(Optional<String> workingDirectory, String start, String stop) {
     }
 }

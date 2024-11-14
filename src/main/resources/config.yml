@@ -11,3 +11,4 @@ servers:
 waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
 maximum_ping_duration: 60 # in seconds
 shutdown_after_duration: 3600 # in seconds
+redirect_to_waiting_server_on_kick: true
