@@ -41,6 +41,9 @@ public class ShutdownManager {
             String currentServerName = server.getServerInfo().getName();
             // Make sure we don't stop the temporary server
             if (!currentServerName.equals(configuration.getWaitingServerName())) {
+                // Cancel the previous task so we don't have conflicting tasks
+                cancelTask(server);
+
                 Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
                         .buildTask(plugin, () -> api.stop(currentServerName))
                         .delay(configuration.getShutdownAfterDuration());
