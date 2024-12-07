@@ -74,7 +74,7 @@ public class ConnectionListener {
         shutdownManager.cancelTask(originalServer);
 
         try {
-            pingCompletableFuture.get();
+            pingCompletableFuture.get(); // FIXME: This is blocking the main thread
             // Server pinged successfully, we can connect the player to this server
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(originalServer));
         } catch (ExecutionException exception) {
@@ -118,14 +118,32 @@ public class ConnectionListener {
     @Subscribe()
     public void onKicked(KickedFromServerEvent event) {
         stopServer(event.getPlayer());
+        redirectPlayerToWaitingServerOnKick(event);
+    }
 
-        // Redirect the player to the waiting server
-        if (configuration.getRedirectToWaitingServerOnKick() && event.getServer() != this.waitingServer) {
-            event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickReasonMessage(event)));
+    private void redirectPlayerToWaitingServerOnKick(KickedFromServerEvent event) {
+        boolean shouldRedirectToWaitingServerOnKick = configuration.getRedirectToWaitingServerOnKick();
+        boolean isKickedFromWaitingServer = event.getServer() == this.waitingServer;
+        boolean isConnectedToWaitingServer = event.getPlayer().getCurrentServer()
+                .map(serverConnection -> serverConnection.getServer() == this.waitingServer)
+                .orElse(false);
+
+        if (shouldRedirectToWaitingServerOnKick && !isKickedFromWaitingServer) {
+            if (isConnectedToWaitingServer) {
+                event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
+            } else {
+                event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
+            }
+        } else {
+            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(getKickDisconnectMessage(event)));
         }
     }
 
-    private Component getKickReasonMessage(KickedFromServerEvent event) {
+    private Component getKickDisconnectMessage(KickedFromServerEvent event) {
+        return event.getServerKickReason().orElse(Component.translatable("kick.generic.disconnect"));
+    }
+
+    private Component getKickRedirectMessage(KickedFromServerEvent event) {
         Optional<Component> serverKickReason = event.getServerKickReason();
         String serverName = event.getServer().getServerInfo().getName();
         String serverCommand = "/server " + serverName;
