@@ -31,26 +31,26 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public String getPterodactylApiKey() {
-        return (String) config.get("pterodactyl_api_key");
+        return getConfigurationString("pterodactyl_api_key");
     }
 
     @Override
     public String getPterodactylClientApiBaseURL() {
-        return (String) config.get("pterodactyl_client_api_base_url");
+        return getConfigurationString("pterodactyl_client_api_base_url");
     }
 
     @Override
-    public String getPterodactylServerIdentifier(String serverName) {
+    public String getPterodactylServerIdentifier(String serverName) throws IllegalArgumentException, NoSuchElementException {
         Object configuration = getServerConfiguration(serverName);
         if (configuration instanceof String) {
             return (String) configuration;
         }
-        throw new IllegalArgumentException("'servers." + serverName + "' must be of type String.");
+        throw new IllegalArgumentException("'servers." + serverName + "' must be of type String");
     }
 
     @Override
     public String getWaitingServerName() {
-        return (String) config.get("waiting_server_name");
+        return getConfigurationString("waiting_server_name");
     }
 
     @Override
@@ -72,7 +72,7 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public @NotNull PowerCommands getPowerCommands(String serverName) {
+    public @NotNull PowerCommands getPowerCommands(String serverName) throws NoSuchElementException {
         Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
 
         if (!serverConfiguration.containsKey("start")) {
@@ -96,5 +96,16 @@ public class YamlConfiguration implements Configuration {
             return servers.get(serverName);
         }
         throw new NoSuchElementException("Server " + serverName + " not found in the configuration");
+    }
+
+    private @NotNull String getConfigurationString(String key) throws NoSuchElementException, ClassCastException {
+        Object configValue = config.get(key);
+        if (configValue == null) {
+            throw new NoSuchElementException("Configuration property " + key + " not found in the configuration");
+        }
+        if (configValue instanceof String) {
+            return (String) configValue;
+        }
+        throw new ClassCastException(key + " must be of type String");
     }
 }

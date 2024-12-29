@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 
 public class PterodactylAPI implements PowerActionAPI {
@@ -34,7 +35,7 @@ public class PterodactylAPI implements PowerActionAPI {
         return makeRequest(getPterodactylServerId(server), "start");
     }
 
-    private String getPterodactylServerId(String server) throws IllegalArgumentException {
+    private String getPterodactylServerId(String server) throws IllegalArgumentException, NoSuchElementException {
         return configuration.getPterodactylServerIdentifier(server);
     }
 

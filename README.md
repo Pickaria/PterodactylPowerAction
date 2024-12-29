@@ -55,6 +55,14 @@ shutdown_after_duration: 3600 # in seconds
 redirect_to_waiting_server_on_kick: true
 ```
 
+> [!WARNING]
+> If the panel is running behind a proxy such as CloudFlare DNS proxy, the plugin may not work with and output errors
+> such as:
+> ```
+> An error occurred while starting the server survival
+> java.net.ConnectException: Connection refused
+> ```
+
 ### Shell commands
 
 If you don't have a Pterodactyl panel, and you are running servers directly from the Linux shell, you can modify the

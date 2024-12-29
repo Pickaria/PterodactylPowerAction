@@ -7,6 +7,7 @@ import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,13 +20,15 @@ public class StartingServer implements ForwardingAudience {
     private final Configuration configuration;
     private final ShutdownManager shutdownManager;
     private final Set<Player> waitingPlayers = new HashSet<>();
+    private final Logger logger;
     private boolean isStarting = false;
 
-    public StartingServer(RegisteredServer server, PowerActionAPI api, Configuration configuration, ShutdownManager shutdownManager) {
+    public StartingServer(RegisteredServer server, PowerActionAPI api, Configuration configuration, ShutdownManager shutdownManager, Logger logger) {
         this.server = server;
         this.api = api;
         this.configuration = configuration;
         this.shutdownManager = shutdownManager;
+        this.logger = logger;
     }
 
     /**
@@ -41,7 +44,13 @@ public class StartingServer implements ForwardingAudience {
         if (!isStarting) {
             isStarting = true;
             String serverName = server.getServerInfo().getName();
-            api.start(serverName).thenAccept((started) -> pingUntilUpAndRedirectPlayers());
+            api.start(serverName).whenComplete((result, exception) -> {
+                if (exception == null) {
+                    pingUntilUpAndRedirectPlayers();
+                } else {
+                    informError(exception);
+                }
+            });
         }
 
         return added;
@@ -64,12 +73,18 @@ public class StartingServer implements ForwardingAudience {
                 shutdownManager.shutdownServer(server, false);
             }
         } catch (CancellationException | ExecutionException | InterruptedException exception) {
-            Component message = Component.translatable("failed.to.start.server", Component.text(server.getServerInfo().getName(), NamedTextColor.GRAY)).color(NamedTextColor.RED);
-            sendMessage(message);
+            informError(exception);
         } finally {
             isStarting = false;
             waitingPlayers.clear();
         }
+    }
+
+    private void informError(Throwable throwable) {
+        String serverName = server.getServerInfo().getName();
+        logger.error("An error occurred while starting the server {}", serverName, throwable);
+        Component message = Component.translatable("failed.to.start.server", Component.text(serverName, NamedTextColor.GRAY)).color(NamedTextColor.RED);
+        sendMessage(message);
     }
 
     @Override
