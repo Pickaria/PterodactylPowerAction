@@ -112,12 +112,12 @@ public class ConnectionListener {
 
     @Subscribe()
     public void onDisconnect(DisconnectEvent event) {
-        stopServer(event.getPlayer());
+        scheduleServerShutdown(event.getPlayer());
     }
 
     @Subscribe()
     public void onKicked(KickedFromServerEvent event) {
-        stopServer(event.getPlayer());
+        scheduleServerShutdown(event.getPlayer());
         redirectPlayerToWaitingServerOnKick(event);
     }
 
@@ -134,6 +134,7 @@ public class ConnectionListener {
             } else {
                 event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
             }
+            scheduleServerShutdown(event.getServer());
         } else {
             event.setResult(KickedFromServerEvent.DisconnectPlayer.create(getKickDisconnectMessage(event)));
         }
@@ -153,11 +154,15 @@ public class ConnectionListener {
                 .orElseGet(() -> messager.format(MessageType.INFO, "kick.generic.message", new Text(serverNameComponent), goBack));
     }
 
-    private void stopServer(Player player) {
+    private void scheduleServerShutdown(Player player) {
         Optional<ServerConnection> serverConnection = player.getCurrentServer();
         if (serverConnection.isPresent()) {
             RegisteredServer currentServer = serverConnection.get().getServer();
-            shutdownManager.shutdownServer(currentServer, true);
+            scheduleServerShutdown(currentServer);
         }
+    }
+
+    private void scheduleServerShutdown(RegisteredServer registeredServer) {
+        shutdownManager.shutdownServer(registeredServer, true);
     }
 }
