@@ -1,11 +1,13 @@
 package fr.pickaria.pterodactylpoweraction;
 
+import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import fr.pickaria.messager.Messager;
+import fr.pickaria.messager.components.Text;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -21,14 +23,16 @@ public class StartingServer implements ForwardingAudience {
     private final ShutdownManager shutdownManager;
     private final Set<Player> waitingPlayers = new HashSet<>();
     private final Logger logger;
+    private final Messager messager;
     private boolean isStarting = false;
 
-    public StartingServer(RegisteredServer server, PowerActionAPI api, Configuration configuration, ShutdownManager shutdownManager, Logger logger) {
+    public StartingServer(RegisteredServer server, PowerActionAPI api, Configuration configuration, ShutdownManager shutdownManager, Logger logger, Messager messager) {
         this.server = server;
         this.api = api;
         this.configuration = configuration;
         this.shutdownManager = shutdownManager;
         this.logger = logger;
+        this.messager = messager;
     }
 
     /**
@@ -61,10 +65,19 @@ public class StartingServer implements ForwardingAudience {
 
         try {
             PingUtils.pingUntilUp(server, configuration.getMaximumPingDuration()).get();
+            Component serverName = Component.text(server.getServerInfo().getName());
             for (Player player : waitingPlayers) {
                 if (player.isActive()) {
-                    player.createConnectionRequest(server).connect().get();
-                    hasRedirectedAtLeastOnePlayer = true;
+                    // TODO: We could map on all players then wait for all the futures to complete at once
+                    ConnectionRequestBuilder.Result result = player.createConnectionRequest(server).connect().get();
+                    if (result.isSuccessful()) {
+                        hasRedirectedAtLeastOnePlayer = result.isSuccessful();
+                    } else {
+                        result.getReasonComponent().ifPresentOrElse(
+                                (reason) -> messager.error(player, "failed.to.redirect.reason", new Text(serverName), new Text(reason)),
+                                () -> messager.error(player, "failed.to.redirect")
+                        );
+                    }
                 }
             }
 
@@ -83,8 +96,7 @@ public class StartingServer implements ForwardingAudience {
     private void informError(Throwable throwable) {
         String serverName = server.getServerInfo().getName();
         logger.error("An error occurred while starting the server {}", serverName, throwable);
-        Component message = Component.translatable("failed.to.start.server", Component.text(serverName, NamedTextColor.GRAY)).color(NamedTextColor.RED);
-        sendMessage(message);
+        messager.error(this, "failed.to.start.server", new Text(Component.text(serverName)));
     }
 
     @Override

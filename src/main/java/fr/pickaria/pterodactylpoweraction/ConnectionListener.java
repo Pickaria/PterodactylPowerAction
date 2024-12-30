@@ -94,7 +94,7 @@ public class ConnectionListener {
             if (startingServers.containsKey(originalServerName)) {
                 playerAddedToWaitingList = startingServers.get(originalServerName).addPlayer(event.getPlayer());
             } else {
-                StartingServer startingServer = new StartingServer(originalServer, api, configuration, shutdownManager, logger);
+                StartingServer startingServer = new StartingServer(originalServer, api, configuration, shutdownManager, logger, messager);
                 playerAddedToWaitingList = startingServer.addPlayer(event.getPlayer());
                 startingServers.put(originalServerName, startingServer);
                 // TODO: Should we clear the entry from the map once the server is started?

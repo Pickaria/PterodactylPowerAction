@@ -40,7 +40,7 @@ public class PterodactylAPI implements PowerActionAPI {
     }
 
     private CompletableFuture<Void> makeRequest(String server, String action) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        CompletableFuture<Void> future = new CompletableFuture<>(); // TODO: This could be simplified
         assert action.equals("start") || action.equals("stop");
 
         CompletableFuture.runAsync(() -> {
