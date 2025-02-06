@@ -1,5 +1,7 @@
 package fr.pickaria.pterodactylpoweraction;
 
+import com.velocitypowered.api.proxy.ProxyServer;
+
 import java.time.Duration;
 import java.util.Optional;
 
@@ -21,6 +23,8 @@ public interface Configuration {
     Duration getShutdownAfterDuration();
 
     boolean getRedirectToWaitingServerOnKick();
+
+    boolean validateConfig(ProxyServer proxy);
 
     record PowerCommands(Optional<String> workingDirectory, String start, String stop) {
     }

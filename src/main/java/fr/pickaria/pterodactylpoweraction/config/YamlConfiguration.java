@@ -1,8 +1,12 @@
 package fr.pickaria.pterodactylpoweraction.config;
 
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
+import fr.pickaria.pterodactylpoweraction.PingUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -16,8 +20,15 @@ import java.util.Optional;
 
 public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
+    private final Logger logger;
 
-    public YamlConfiguration(File file) throws FileNotFoundException {
+    private static final int DEFAULT_SHUTDOWN_AFTER_DURATION = 3_600; // in seconds
+    private static final int DEFAULT_MAXIMUM_PING_DURATION = 60; // in seconds
+    private static final boolean DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK = false;
+
+    public YamlConfiguration(File file, Logger logger) throws FileNotFoundException {
+        this.logger = logger;
+
         Yaml yaml = new Yaml();
         InputStream is = new FileInputStream(file);
         this.config = yaml.load(is);
@@ -30,13 +41,12 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public String getPterodactylApiKey() {
+    public @NotNull String getPterodactylApiKey() throws NoSuchElementException, ClassCastException {
         return getConfigurationString("pterodactyl_api_key");
     }
 
     @Override
-    public String getPterodactylClientApiBaseURL() {
-        return getConfigurationString("pterodactyl_client_api_base_url");
+    public @NotNull String getPterodactylClientApiBaseURL() throws NoSuchElementException, ClassCastException {
         return removeTrailingSlash(getConfigurationString("pterodactyl_client_api_base_url"));
     }
 
@@ -50,26 +60,26 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public String getWaitingServerName() {
+    public @NotNull String getWaitingServerName() throws NoSuchElementException, ClassCastException {
         return getConfigurationString("waiting_server_name");
     }
 
     @Override
     public Duration getMaximumPingDuration() {
-        int seconds = (int) config.get("maximum_ping_duration");
+        int seconds = (int) config.getOrDefault("maximum_ping_duration", DEFAULT_MAXIMUM_PING_DURATION);
         return Duration.ofSeconds(seconds);
     }
 
     @Override
     public Duration getShutdownAfterDuration() {
-        int seconds = (int) config.get("shutdown_after_duration");
+        int seconds = (int) config.getOrDefault("shutdown_after_duration", DEFAULT_SHUTDOWN_AFTER_DURATION);
         return Duration.ofSeconds(seconds);
     }
 
     @Override
     public boolean getRedirectToWaitingServerOnKick() {
         String key = "redirect_to_waiting_server_on_kick";
-        return config.containsKey(key) && (boolean) config.get(key);
+        return config.containsKey(key) ? (boolean) config.get(key) : DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK;
     }
 
     @Override
@@ -89,6 +99,57 @@ public class YamlConfiguration implements Configuration {
         String stopCommands = (String) serverConfiguration.get("stop");
 
         return new PowerCommands(workingDirectory, startCommands, stopCommands);
+    }
+
+    @Override
+    public boolean validateConfig(ProxyServer proxy) {
+        boolean isValid = true;
+
+        // Validate API-specific configuration
+        if (getAPIType() == APIType.PTERODACTYL) {
+            if (!config.containsKey("pterodactyl_client_api_base_url")) {
+                logger.error("'pterodactyl_client_api_base_url' is missing but required when type is 'pterodactyl'.");
+                isValid = false;
+            }
+            String apiKey = getPterodactylApiKey();
+            if (!apiKey.startsWith("ptlc_")) {
+                logger.error("Invalid API key. Please create an API Key from your account's page.");
+                isValid = false;
+            }
+        }
+
+        // Validate waiting server configuration
+        String waitingServerName = getWaitingServerName();
+        Optional<RegisteredServer> registeredServer = proxy.getServer(waitingServerName);
+
+        if (registeredServer.isEmpty()) {
+            logger.error("Waiting server '{}' not configured in 'velocity.toml'.", waitingServerName);
+            isValid = false;
+        } else if (!PingUtils.isReachable(registeredServer.get())) {
+            logger.error("Waiting server '{}' is not reachable.", waitingServerName);
+            isValid = false;
+        }
+
+        // Warn if waiting server is misconfigured in the plugin's own config
+        if (config.containsKey("servers")) {
+            Map<String, Object> servers = (Map<String, Object>) config.get("servers");
+            if (servers.containsKey(waitingServerName)) {
+                logger.warn("Waiting server '{}' should not be configured in the plugin's configuration.", waitingServerName);
+            }
+        }
+
+        // Warn about missing optional configurations
+        if (!config.containsKey("maximum_ping_duration")) {
+            logger.warn("'maximum_ping_duration' is not provided, using default value of '{}'.", DEFAULT_MAXIMUM_PING_DURATION);
+        }
+        if (!config.containsKey("shutdown_after_duration")) {
+            logger.warn("'shutdown_after_duration' is not provided, using default value of '{}'.", DEFAULT_SHUTDOWN_AFTER_DURATION);
+        }
+        if (!config.containsKey("redirect_to_waiting_server_on_kick")) {
+            logger.warn("'redirect_to_waiting_server_on_kick' is not provided, using default value of '{}'.", DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK);
+        }
+
+        return isValid;
     }
 
     private @NotNull Object getServerConfiguration(String serverName) throws NoSuchElementException {

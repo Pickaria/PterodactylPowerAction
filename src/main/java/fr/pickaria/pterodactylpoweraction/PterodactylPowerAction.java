@@ -65,7 +65,7 @@ public class PterodactylPowerAction {
         }
 
         try {
-            this.configuration = new YamlConfiguration(configurationFile);
+            this.configuration = new YamlConfiguration(configurationFile, logger);
         } catch (FileNotFoundException e) {
             logger.error("Error loading configuration", e);
         }
@@ -73,6 +73,11 @@ public class PterodactylPowerAction {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        if (!this.configuration.validateConfig(this.proxy)) {
+            logger.error("The configuration file is not valid. Aborting plugin initialization. Please review above errors.");
+            return;
+        }
+
         initializeTranslator(
                 ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.FRENCH, UTF8ResourceBundleControl.get()),
                 ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.ENGLISH, UTF8ResourceBundleControl.get())
