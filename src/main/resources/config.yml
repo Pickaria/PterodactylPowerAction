@@ -1,14 +1,13 @@
 type: "pterodactyl" # Can also be "shell", see the README for more information
-# Create a new client API key which can be found under "Account Settings" then " API Credentials", the URL path should be https://pterodactyl.test/account/api.
+# Create a new client API key which can be found under "Account Settings" then "API Credentials", the URL path should be https://example.com/account/api.
 pterodactyl_api_key: "ptlc_xxx"
-pterodactyl_client_api_base_url: "https://pterodactyl.test/api/client" # No trailing slash
+pterodactyl_client_api_base_url: "https://example.com/api/client"
 servers:
   # "survival" is the name of the configured server in your "velocity.toml" file
-  # "abc" should be replaced with the identifier of your server in Pterodactyl
-  # this can be found in the URL such as: https://pterodactyl.test/server/:server_id
-  # where ":server_id" is the identifier of the server
-  survival: "abc"
+  # "Server ID" should be replaced with the identifier of your server in Pterodactyl
+  # The Server ID can be found under the "Debug Information" section in the "Settings" tab of your server
+  survival: "Server ID"
 waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
-maximum_ping_duration: 60 # in seconds
-shutdown_after_duration: 3600 # in seconds
-redirect_to_waiting_server_on_kick: true
+maximum_ping_duration: 60 # in seconds, defaults to 1 minute
+shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
+redirect_to_waiting_server_on_kick: true # defaults to false

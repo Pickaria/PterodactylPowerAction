@@ -37,6 +37,7 @@ public class YamlConfiguration implements Configuration {
     @Override
     public String getPterodactylClientApiBaseURL() {
         return getConfigurationString("pterodactyl_client_api_base_url");
+        return removeTrailingSlash(getConfigurationString("pterodactyl_client_api_base_url"));
     }
 
     @Override
@@ -107,5 +108,12 @@ public class YamlConfiguration implements Configuration {
             return (String) configValue;
         }
         throw new ClassCastException(key + " must be of type String");
+    }
+
+    private static @NotNull String removeTrailingSlash(@NotNull String s) {
+        if (s.endsWith("/")) {
+            return s.substring(0, s.length() - 1);
+        }
+        return s;
     }
 }

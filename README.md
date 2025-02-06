@@ -32,7 +32,13 @@ Configure a waiting server in your `velocity.toml` file, such as:
 
 ```toml
 [servers]
-limbo = "127.0.0.1:30066"
+limbo = "localhost:30066"
+survival = "localhost:30067"
+
+try = ["survival"]
+
+[forced-hosts]
+"localhost" = ["survival"]
 ```
 
 Install the plugin on your Velocity proxy, a default configuration file will be created when the proxy is started.
@@ -40,24 +46,23 @@ Finally edit the plugin's configuration file to include your Pterodactyl credent
 
 ```yaml
 type: "pterodactyl" # Can also be "shell", see the README for more information
-# Create a new client API key which can be found under "Account Settings" then " API Credentials", the URL path should be https://pterodactyl.test/account/api.
+# Create a new client API key which can be found under "Account Settings" then "API Credentials", the URL path should be https://example.com/account/api.
 pterodactyl_api_key: "ptlc_xxx"
-pterodactyl_client_api_base_url: "https://pterodactyl.test/api/client" # No trailing slash
+pterodactyl_client_api_base_url: "https://example.com/api/client"
 servers:
   # "survival" is the name of the configured server in your "velocity.toml" file
-  # "abc" should be replaced with the identifier of your server in Pterodactyl
-  # this can be found in the URL such as: https://pterodactyl.test/server/:server_id
-  # where ":server_id" is the identifier of the server
-  survival: "abc"
+  # "Server ID" should be replaced with the identifier of your server in Pterodactyl
+  # The Server ID can be found under the "Debug Information" section in the "Settings" tab of your server
+  survival: "Server ID"
 waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
-maximum_ping_duration: 60 # in seconds
-shutdown_after_duration: 3600 # in seconds
-redirect_to_waiting_server_on_kick: true
+maximum_ping_duration: 60 # in seconds, defaults to 1 minute
+shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
+redirect_to_waiting_server_on_kick: true # defaults to false
 ```
 
 > [!WARNING]
-> If the panel is running behind a proxy such as CloudFlare DNS proxy, the plugin may not work with and output errors
-> such as:
+> If the panel is running behind a proxy such as CloudFlare DNS proxy, the plugin may not be able to start the servers
+> and output errors such as:
 > ```
 > An error occurred while starting the server survival
 > java.net.ConnectException: Connection refused
@@ -82,10 +87,18 @@ servers:
     start: docker compose start survival
     stop: docker compose stop survival
 waiting_server_name: "limbo"
-maximum_ping_duration: 60 # in seconds
-shutdown_after_duration: 3600 # in seconds
+maximum_ping_duration: 60
+shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
 ```
+
+## Limbo servers
+
+Here is a small list of recommended lightweights servers software to use as waiting server:
+
+- [Limbo](https://www.spigotmc.org/resources/82468/)
+- [NanoLimbo](https://www.spigotmc.org/resources/86198/)
+- [Quozul/McServer](https://github.com/Quozul/McServer)
 
 ## Motivations
 
