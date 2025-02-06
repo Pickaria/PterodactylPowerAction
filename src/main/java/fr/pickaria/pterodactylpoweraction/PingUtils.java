@@ -1,5 +1,6 @@
 package fr.pickaria.pterodactylpoweraction;
 
+import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 
@@ -11,6 +12,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class PingUtils {
+    private static final Duration PING_TIMEOUT = Duration.ofSeconds(1);
+    private static final PingOptions PING_OPTIONS = PingOptions.builder().timeout(PING_TIMEOUT).build();
+
     /**
      * Pings a server until it starts.
      *
@@ -26,8 +30,7 @@ public class PingUtils {
             while (Instant.now().isBefore(start.plus(maxPingDuration))) {
                 try {
                     // Block and wait for the ping to complete
-                    ServerPing serverPing = server.ping().get();
-                    return serverPing;
+                    return server.ping(PING_OPTIONS).get();
                 } catch (InterruptedException | ExecutionException e) {
                     // Ping failed or interrupted, wait for a bit before retrying
                     try {
@@ -40,5 +43,19 @@ public class PingUtils {
             // Max ping duration exceeded without successful ping
             throw new CompletionException(new TimeoutException("Max ping duration exceeded"));
         });
+    }
+
+    /**
+     * Check if the server is reachable right now. This is blocking.
+     *
+     * @param server The server we want to ping
+     * @return True if the server is reachable now and False if any exception is thrown or if the server is not reachable
+     */
+    public static boolean isReachable(RegisteredServer server) {
+        try {
+            return server.ping(PING_OPTIONS).handle((ping, throwable) -> throwable == null).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return false;
+        }
     }
 }

@@ -9,7 +9,6 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerPing;
 import fr.pickaria.messager.MessageComponent;
 import fr.pickaria.messager.MessageType;
 import fr.pickaria.messager.Messager;
@@ -21,9 +20,6 @@ import org.slf4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class ConnectionListener {
     private final Logger logger;
@@ -69,15 +65,13 @@ public class ConnectionListener {
     public void onServerPreConnect(ServerPreConnectEvent event) {
         RegisteredServer originalServer = event.getOriginalServer();
         RegisteredServer previousServer = event.getPreviousServer();
-        CompletableFuture<ServerPing> pingCompletableFuture = originalServer.ping();
 
         shutdownManager.cancelTask(originalServer);
 
-        try {
-            pingCompletableFuture.get(); // FIXME: This is blocking the main thread
+        if (PingUtils.isReachable(originalServer)) { // FIXME: This is blocking the main thread
             // Server pinged successfully, we can connect the player to this server
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(originalServer));
-        } catch (ExecutionException exception) {
+        } else {
             boolean isAlreadyConnected = previousServer != null;
             if (isAlreadyConnected) {
                 // If the player is already connected on the network, we don't want to redirect it to the waiting server
@@ -104,9 +98,6 @@ public class ConnectionListener {
                 Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
                 event.getPlayer().sendMessage(message);
             }
-        } catch (CancellationException | InterruptedException exception) {
-            // Something else bad has happened
-            event.setResult(ServerPreConnectEvent.ServerResult.denied());
         }
     }
 
