@@ -21,16 +21,26 @@ public class ShellCommandAPI implements PowerActionAPI {
 
     @Override
     public CompletableFuture<Void> stop(String server) {
+        Optional<Configuration.PowerCommands> powerCommands = configuration.getPowerCommands(server);
+        if (powerCommands.isEmpty()) {
+            return CompletableFuture.failedFuture(new RuntimeException("No commands available for server " + server));
+        }
+
+        Configuration.PowerCommands powerCommand = powerCommands.get();
         logger.info("Stopping server {}", server);
-        Configuration.PowerCommands powerCommands = configuration.getPowerCommands(server);
-        return runCommands(powerCommands.workingDirectory(), powerCommands.stop());
+        return runCommands(powerCommand.workingDirectory(), powerCommand.stop());
     }
 
     @Override
     public CompletableFuture<Void> start(String server) {
+        Optional<Configuration.PowerCommands> powerCommands = configuration.getPowerCommands(server);
+        if (powerCommands.isEmpty()) {
+            return CompletableFuture.failedFuture(new RuntimeException("No commands available for server " + server));
+        }
+
+        Configuration.PowerCommands powerCommand = powerCommands.get();
         logger.info("Starting server {}", server);
-        Configuration.PowerCommands powerCommands = configuration.getPowerCommands(server);
-        return runCommands(powerCommands.workingDirectory(), powerCommands.start());
+        return runCommands(powerCommand.workingDirectory(), powerCommand.start());
     }
 
     private CompletableFuture<Void> runCommands(Optional<String> workingDirectory, String command) {

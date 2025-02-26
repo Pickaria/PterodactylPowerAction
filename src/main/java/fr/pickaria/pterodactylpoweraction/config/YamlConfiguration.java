@@ -41,22 +41,34 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public @NotNull String getPterodactylApiKey() throws NoSuchElementException, ClassCastException {
-        return getConfigurationString("pterodactyl_api_key");
-    }
-
-    @Override
-    public @NotNull String getPterodactylClientApiBaseURL() throws NoSuchElementException, ClassCastException {
-        return removeTrailingSlash(getConfigurationString("pterodactyl_client_api_base_url"));
-    }
-
-    @Override
-    public String getPterodactylServerIdentifier(String serverName) throws IllegalArgumentException, NoSuchElementException {
-        Object configuration = getServerConfiguration(serverName);
-        if (configuration instanceof String) {
-            return (String) configuration;
+    public Optional<String> getPterodactylApiKey() {
+        try {
+            return Optional.of(getConfigurationString("pterodactyl_api_key"));
+        } catch (NoSuchElementException | ClassCastException e) {
+            return Optional.empty();
         }
-        throw new IllegalArgumentException("'servers." + serverName + "' must be of type String");
+    }
+
+    @Override
+    public Optional<String> getPterodactylClientApiBaseURL() {
+        try {
+            return Optional.of(removeTrailingSlash(getConfigurationString("pterodactyl_client_api_base_url")));
+        } catch (NoSuchElementException | ClassCastException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<String> getPterodactylServerIdentifier(String serverName) {
+        try {
+            Object configuration = getServerConfiguration(serverName);
+            if (configuration instanceof String) {
+                return Optional.of((String) configuration);
+            }
+        } catch (NoSuchElementException e) {
+            // Fall through to return empty
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -83,22 +95,28 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public @NotNull PowerCommands getPowerCommands(String serverName) throws NoSuchElementException {
-        Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
+    public Optional<PowerCommands> getPowerCommands(String serverName) {
+        try {
+            Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
 
-        if (!serverConfiguration.containsKey("start")) {
-            throw new NoSuchElementException("'servers." + serverName + ".start' is missing from the configuration file");
+            if (!serverConfiguration.containsKey("start")) {
+                logger.error("'servers.{}.start' is missing from the configuration file", serverName);
+                return Optional.empty();
+            }
+
+            if (!serverConfiguration.containsKey("stop")) {
+                logger.error("'servers.{}.stop' is missing from the configuration file", serverName);
+                return Optional.empty();
+            }
+
+            Optional<String> workingDirectory = Optional.ofNullable((String) serverConfiguration.get("working_directory"));
+            String startCommands = (String) serverConfiguration.get("start");
+            String stopCommands = (String) serverConfiguration.get("stop");
+
+            return Optional.of(new PowerCommands(workingDirectory, startCommands, stopCommands));
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
         }
-
-        if (!serverConfiguration.containsKey("stop")) {
-            throw new NoSuchElementException("'servers." + serverName + ".stop' is missing from the configuration file");
-        }
-
-        Optional<String> workingDirectory = Optional.ofNullable((String) serverConfiguration.get("working_directory"));
-        String startCommands = (String) serverConfiguration.get("start");
-        String stopCommands = (String) serverConfiguration.get("stop");
-
-        return new PowerCommands(workingDirectory, startCommands, stopCommands);
     }
 
     @Override
@@ -111,8 +129,8 @@ public class YamlConfiguration implements Configuration {
                 logger.error("'pterodactyl_client_api_base_url' is missing but required when type is 'pterodactyl'.");
                 isValid = false;
             }
-            String apiKey = getPterodactylApiKey();
-            if (!apiKey.startsWith("ptlc_")) {
+            Optional<String> apiKeyOpt = getPterodactylApiKey();
+            if (apiKeyOpt.isEmpty() || !apiKeyOpt.get().startsWith("ptlc_")) {
                 logger.error("Invalid API key. Please create an API Key from your account's page.");
                 isValid = false;
             }

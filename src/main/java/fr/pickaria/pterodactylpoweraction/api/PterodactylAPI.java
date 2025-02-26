@@ -10,7 +10,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class PterodactylAPI implements PowerActionAPI {
@@ -25,18 +25,26 @@ public class PterodactylAPI implements PowerActionAPI {
 
     @Override
     public CompletableFuture<Void> stop(String server) {
+        Optional<String> serverIdentifier = configuration.getPterodactylServerIdentifier(server);
+        if (serverIdentifier.isEmpty()) {
+            return CompletableFuture.failedFuture(new RuntimeException("No unique identifier for server " + server));
+        }
+
+        String identifier = serverIdentifier.get();
         logger.info("Stopping server {}", server);
-        return makeRequest(getPterodactylServerId(server), "stop");
+        return makeRequest(identifier, "stop");
     }
 
     @Override
     public CompletableFuture<Void> start(String server) {
-        logger.info("Starting server {}", server);
-        return makeRequest(getPterodactylServerId(server), "start");
-    }
+        Optional<String> serverIdentifier = configuration.getPterodactylServerIdentifier(server);
+        if (serverIdentifier.isEmpty()) {
+            return CompletableFuture.failedFuture(new RuntimeException("No unique identifier for server " + server));
+        }
 
-    private String getPterodactylServerId(String server) throws IllegalArgumentException, NoSuchElementException {
-        return configuration.getPterodactylServerIdentifier(server);
+        String identifier = serverIdentifier.get();
+        logger.info("Starting server {}", server);
+        return makeRequest(identifier, "start");
     }
 
     private CompletableFuture<Void> makeRequest(String server, String action) {
@@ -49,9 +57,9 @@ public class PterodactylAPI implements PowerActionAPI {
             HttpRequest request = null;
             try {
                 request = HttpRequest.newBuilder()
-                        .uri(new URI(configuration.getPterodactylClientApiBaseURL() + "/servers/" + server + "/power"))
+                        .uri(new URI(configuration.getPterodactylClientApiBaseURL().get() + "/servers/" + server + "/power"))
                         .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + configuration.getPterodactylApiKey())
+                        .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().get())
                         .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                         .build();
             } catch (URISyntaxException e) {

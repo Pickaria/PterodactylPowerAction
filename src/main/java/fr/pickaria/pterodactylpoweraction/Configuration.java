@@ -8,13 +8,13 @@ import java.util.Optional;
 public interface Configuration {
     APIType getAPIType();
 
-    String getPterodactylApiKey();
+    Optional<String> getPterodactylApiKey();
 
-    String getPterodactylClientApiBaseURL();
+    Optional<String> getPterodactylClientApiBaseURL();
 
-    String getPterodactylServerIdentifier(String serverName);
+    Optional<String> getPterodactylServerIdentifier(String serverName);
 
-    PowerCommands getPowerCommands(String serverName);
+    Optional<PowerCommands> getPowerCommands(String serverName);
 
     String getWaitingServerName();
 
