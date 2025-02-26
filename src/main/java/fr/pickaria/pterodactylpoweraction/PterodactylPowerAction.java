@@ -85,7 +85,7 @@ public class PterodactylPowerAction {
 
         try {
             PowerActionAPI api = initializeAPI();
-            ShutdownManager shutdownManager = new ShutdownManager(proxy, this, api, configuration);
+            ShutdownManager shutdownManager = new ShutdownManager(proxy, this, api, configuration, logger);
             ConnectionListener listener = new ConnectionListener(configuration, proxy, logger, api, shutdownManager);
             proxy.getEventManager().register(this, listener);
         } catch (NoSuchElementException e) {

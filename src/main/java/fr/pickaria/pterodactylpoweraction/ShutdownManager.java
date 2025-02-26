@@ -4,6 +4,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.Scheduler;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,8 +16,9 @@ public class ShutdownManager {
     private final PowerActionAPI api;
     private final Configuration configuration;
     private final Map<String, ScheduledTask> shutdownTasks = new HashMap<>();
+    private final Logger logger;
 
-    public ShutdownManager(ProxyServer proxy, PterodactylPowerAction plugin, PowerActionAPI api, Configuration configuration) {
+    public ShutdownManager(ProxyServer proxy, PterodactylPowerAction plugin, PowerActionAPI api, Configuration configuration, Logger logger) {
         assert instance == null; // Simply to make sure we only instantiate this class once
         instance = this;
 
@@ -24,6 +26,7 @@ public class ShutdownManager {
         this.plugin = plugin;
         this.api = api;
         this.configuration = configuration;
+        this.logger = logger;
     }
 
     /**
@@ -44,6 +47,7 @@ public class ShutdownManager {
                 // Cancel the previous task so we don't have conflicting tasks
                 cancelTask(server);
 
+                logger.info("Scheduling a stop task for server {} in {} seconds", currentServerName, configuration.getShutdownAfterDuration().getSeconds());
                 Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
                         .buildTask(plugin, () -> api.stop(currentServerName))
                         .delay(configuration.getShutdownAfterDuration());
@@ -61,6 +65,7 @@ public class ShutdownManager {
     public void cancelTask(RegisteredServer server) {
         String serverName = server.getServerInfo().getName();
         if (shutdownTasks.containsKey(serverName)) {
+            logger.info("Cancelling shutdown for server {}", serverName);
             shutdownTasks.get(serverName).cancel();
         }
     }
