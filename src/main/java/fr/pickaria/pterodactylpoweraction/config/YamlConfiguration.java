@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.UUID;
 
 public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
@@ -138,12 +139,12 @@ public class YamlConfiguration implements Configuration {
 
         // Validate waiting server configuration
         String waitingServerName = getWaitingServerName();
-        Optional<RegisteredServer> registeredServer = proxy.getServer(waitingServerName);
+        Optional<RegisteredServer> registeredWaitingServer = proxy.getServer(waitingServerName);
 
-        if (registeredServer.isEmpty()) {
-            logger.error("Waiting server '{}' not configured in 'velocity.toml'.", waitingServerName);
+        if (registeredWaitingServer.isEmpty()) {
+            logger.error("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
             isValid = false;
-        } else if (!PingUtils.isReachable(registeredServer.get())) {
+        } else if (!PingUtils.isReachable(registeredWaitingServer.get())) {
             logger.error("Waiting server '{}' is not reachable.", waitingServerName);
             isValid = false;
         }
@@ -153,7 +154,21 @@ public class YamlConfiguration implements Configuration {
             Map<String, Object> servers = (Map<String, Object>) config.get("servers");
             if (servers.containsKey(waitingServerName)) {
                 logger.warn("Waiting server '{}' should not be configured in the plugin's configuration.", waitingServerName);
+                servers.remove(waitingServerName);
             }
+
+            servers.forEach((key, value) -> {
+                if (proxy.getServer(key).isEmpty()) {
+                    logger.warn("The server '{}' is missing in 'velocity.toml'.", key);
+                }
+
+                if (getAPIType() == APIType.PTERODACTYL) {
+                    String uuid = (String) value;
+                    if (!this.isUUID(uuid)) {
+                        logger.warn("The identifier '{}' for server '{}' must be a valid UUID. You can find the 'Server ID' under the 'Settings' tab of your server on your Pterodactyl panel.", uuid, key);
+                    }
+                }
+            });
         }
 
         // Warn about missing optional configurations
@@ -187,6 +202,15 @@ public class YamlConfiguration implements Configuration {
             return (String) configValue;
         }
         throw new ClassCastException(key + " must be of type String");
+    }
+
+    private boolean isUUID(String uuid) {
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static @NotNull String removeTrailingSlash(@NotNull String s) {
