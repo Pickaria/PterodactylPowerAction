@@ -80,7 +80,8 @@ public class PterodactylPowerAction {
 
         initializeTranslator(
                 ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.FRENCH, UTF8ResourceBundleControl.get()),
-                ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.ENGLISH, UTF8ResourceBundleControl.get())
+                ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.ENGLISH, UTF8ResourceBundleControl.get()),
+                ResourceBundle.getBundle("PterodactylPowerAction.Bundle", Locale.GERMAN, UTF8ResourceBundleControl.get())
         );
 
         try {
