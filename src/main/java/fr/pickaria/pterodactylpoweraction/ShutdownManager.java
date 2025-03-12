@@ -32,29 +32,26 @@ public class ShutdownManager {
     /**
      * Start a task that will shut down the server after the configured delay.
      *
-     * @param server            The server we want to shut down
-     * @param playerIsConnected Set this to true if the player is currently connected to the server
+     * @param server The server we want to shut down
      */
-    public void shutdownServer(RegisteredServer server, boolean playerIsConnected) {
-        int playerCount = server.getPlayersConnected().size();
-        if (playerIsConnected) {
-            playerCount--;
-        }
-        if (playerCount <= 0) {
-            String currentServerName = server.getServerInfo().getName();
-            // Make sure we don't stop the temporary server
-            if (!currentServerName.equals(configuration.getWaitingServerName())) {
-                // Cancel the previous task so we don't have conflicting tasks
-                cancelTask(server);
+    public void shutdownServer(RegisteredServer server) {
+        PingUtils.getPlayerCount(server).thenAccept(playerCount -> {
+            if (playerCount <= 0) {
+                String currentServerName = server.getServerInfo().getName();
+                // Make sure we don't stop the temporary server
+                if (!currentServerName.equals(configuration.getWaitingServerName())) {
+                    // Cancel the previous task so we don't have conflicting tasks
+                    cancelTask(server);
 
-                logger.info("Scheduling a stop task for server {} in {} seconds", currentServerName, configuration.getShutdownAfterDuration().getSeconds());
-                Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
-                        .buildTask(plugin, () -> api.stop(currentServerName))
-                        .delay(configuration.getShutdownAfterDuration());
-                ScheduledTask scheduledTask = taskBuilder.schedule();
-                shutdownTasks.put(currentServerName, scheduledTask);
+                    logger.info("Scheduling a stop task for server {} in {} seconds", currentServerName, configuration.getShutdownAfterDuration().getSeconds());
+                    Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
+                            .buildTask(plugin, () -> api.stop(currentServerName))
+                            .delay(configuration.getShutdownAfterDuration());
+                    ScheduledTask scheduledTask = taskBuilder.schedule();
+                    shutdownTasks.put(currentServerName, scheduledTask);
+                }
             }
-        }
+        });
     }
 
     /**

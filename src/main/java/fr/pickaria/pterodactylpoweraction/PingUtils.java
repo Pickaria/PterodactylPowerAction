@@ -58,4 +58,15 @@ public class PingUtils {
             return false;
         }
     }
+
+    public static CompletableFuture<Integer> getPlayerCount(RegisteredServer server) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                ServerPing serverPing = server.ping(PING_OPTIONS).get();
+                return serverPing.getPlayers().map(ServerPing.Players::getOnline).orElse(0);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 }

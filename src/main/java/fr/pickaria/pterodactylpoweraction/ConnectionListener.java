@@ -58,7 +58,7 @@ public class ConnectionListener {
         // Check if we can shut down the previous server once the player has been redirected
         // This applies to redirection if the server is already running
         // and the automatic redirection after a server has been started
-        previousServer.ifPresent(server -> shutdownManager.shutdownServer(server, false));
+        previousServer.ifPresent(shutdownManager::shutdownServer);
     }
 
     @Subscribe()
@@ -154,6 +154,6 @@ public class ConnectionListener {
     }
 
     private void scheduleServerShutdown(RegisteredServer registeredServer) {
-        shutdownManager.shutdownServer(registeredServer, true);
+        shutdownManager.shutdownServer(registeredServer);
     }
 }
