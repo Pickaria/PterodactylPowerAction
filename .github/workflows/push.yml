@@ -1,0 +1,29 @@
+name: Build and Publish Jar Artifact
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build Jar
+        run: ./gradlew jar
+
+      - name: Upload Jar Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar-artifact
+          path: build/libs/*.jar
