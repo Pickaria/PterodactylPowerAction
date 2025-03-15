@@ -11,11 +11,11 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ProxyServer;
 import fr.pickaria.messager.Messager;
 import fr.pickaria.messager.components.Text;
-import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.PterodactylPowerAction;
 import fr.pickaria.pterodactylpoweraction.ShutdownManager;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationDoctor;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
+import fr.pickaria.pterodactylpoweraction.configuration.ShutdownBehaviour;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
@@ -93,12 +93,7 @@ public class PterodactylPowerActionCommand {
         CommandSource source = context.getSource();
         messager.info(source, "command.clear.start");
 
-        Configuration configuration = configurationLoader.getConfiguration();
-
-        for (String serverName : configuration.getAllServers()) {
-            proxy.getServer(serverName)
-                    .ifPresent(registeredServer -> shutdownManager.scheduleShutdown(registeredServer, getDelayFromContext(context)));
-        }
+        shutdownManager.shutdownAll(ShutdownBehaviour.SHUTDOWN_EMPTY, getDelayFromContext(context));
 
         return Command.SINGLE_SUCCESS;
     }

@@ -2,7 +2,6 @@ package fr.pickaria.pterodactylpoweraction.configuration;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.PingUtils;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;

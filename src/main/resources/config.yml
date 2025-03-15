@@ -11,3 +11,4 @@ waiting_server_name: "limbo" # "limbo" is the name of the configured server in y
 maximum_ping_duration: 60 # in seconds, defaults to 1 minute
 shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
 redirect_to_waiting_server_on_kick: true # defaults to false
+shutdown_behaviour: "shutdown_all" # Can be "shutdown_all", "shutdown_empty" or "nothing", defaults to "shutdown_all"

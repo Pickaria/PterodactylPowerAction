@@ -1,5 +1,8 @@
 package fr.pickaria.pterodactylpoweraction;
 
+import fr.pickaria.pterodactylpoweraction.configuration.APIType;
+import fr.pickaria.pterodactylpoweraction.configuration.ShutdownBehaviour;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -9,6 +12,8 @@ public interface Configuration {
     Map<String, Object> getRawConfig();
 
     APIType getAPIType();
+
+    ShutdownBehaviour getShutdownBehaviour();
 
     Optional<String> getPterodactylApiKey();
 

@@ -58,6 +58,7 @@ waiting_server_name: "limbo" # "limbo" is the name of the configured server in y
 maximum_ping_duration: 60 # in seconds, defaults to 1 minute
 shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
 redirect_to_waiting_server_on_kick: true # defaults to false
+shutdown_behaviour: "shutdown_all" # Can be "shutdown_all", "shutdown_empty" or "nothing", defaults to "shutdown_all"
 ```
 
 > [!WARNING]
@@ -91,6 +92,15 @@ maximum_ping_duration: 60
 shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
 ```
+
+### Shutdown Behaviour
+
+The shutdown behaviour defines what to do when the proxy shuts down. This setting can be one of the following values:
+
+- `nothing`: does nothing and keeps all backend servers running
+- `shutdown_empty`: shutdown all empty servers
+- `shutdown_all`: shutdown all, including non-empty servers
+  If this setting is not set, it defaults to `shutdown_all`.
 
 ## In-game Commands
 

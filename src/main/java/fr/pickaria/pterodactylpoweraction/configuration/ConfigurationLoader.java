@@ -1,6 +1,5 @@
 package fr.pickaria.pterodactylpoweraction.configuration;
 
-import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.PowerActionAPI;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;

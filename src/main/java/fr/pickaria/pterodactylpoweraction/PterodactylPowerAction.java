@@ -5,11 +5,13 @@ import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import fr.pickaria.pterodactylpoweraction.commands.PterodactylPowerActionCommand;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
+import fr.pickaria.pterodactylpoweraction.configuration.ShutdownBehaviour;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.TranslationRegistry;
@@ -17,6 +19,7 @@ import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
@@ -59,6 +62,12 @@ public class PterodactylPowerAction {
         } catch (IllegalArgumentException e) {
             logger.error("Cannot load the configuration file", e);
         }
+    }
+
+    @Subscribe
+    public void onProxyShutdown(ProxyShutdownEvent event) {
+        ShutdownBehaviour shutdownBehaviour = configurationLoader.getConfiguration().getShutdownBehaviour();
+        shutdownManager.shutdownAll(shutdownBehaviour, Duration.ZERO);
     }
 
     private void initializeTranslator(ResourceBundle... bundles) {

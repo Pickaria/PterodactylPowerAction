@@ -1,6 +1,5 @@
 package fr.pickaria.pterodactylpoweraction.configuration;
 
-import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -42,6 +41,19 @@ public class YamlConfiguration implements Configuration {
     public APIType getAPIType() throws IllegalArgumentException {
         String type = (String) config.get("type");
         return APIType.valueOf(type.toUpperCase());
+    }
+
+    @Override
+    public ShutdownBehaviour getShutdownBehaviour() {
+        try {
+            String shutdownBehaviour = getConfigurationString("shutdown_behaviour");
+            return ShutdownBehaviour.valueOf(shutdownBehaviour.toUpperCase());
+        } catch (NoSuchElementException ignored) {
+            return ShutdownBehaviour.SHUTDOWN_ALL;
+        } catch (IllegalArgumentException | ClassCastException ignored) {
+            logger.warn("Setting 'shutdown_behaviour' does not have a valid value.");
+            return ShutdownBehaviour.SHUTDOWN_ALL;
+        }
     }
 
     @Override

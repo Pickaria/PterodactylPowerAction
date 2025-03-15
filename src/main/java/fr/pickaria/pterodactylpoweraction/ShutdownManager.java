@@ -5,6 +5,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.Scheduler;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
+import fr.pickaria.pterodactylpoweraction.configuration.ShutdownBehaviour;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -41,6 +42,29 @@ public class ShutdownManager {
 
     public void scheduleShutdown(RegisteredServer server, Duration afterDuration) {
         scheduleShutdownTask(server, afterDuration);
+    }
+
+    public void shutdownAll(ShutdownBehaviour shutdownBehaviour, Duration afterDuration) {
+        switch (shutdownBehaviour) {
+            case SHUTDOWN_EMPTY: {
+                Configuration configuration = configurationLoader.getConfiguration();
+
+                for (String serverName : configuration.getAllServers()) {
+                    proxy.getServer(serverName)
+                            .ifPresent(registeredServer -> scheduleShutdown(registeredServer, afterDuration));
+                }
+            }
+            case SHUTDOWN_ALL: {
+                Configuration configuration = configurationLoader.getConfiguration();
+                PowerActionAPI api = configurationLoader.getAPI();
+
+                for (String serverName : configuration.getAllServers()) {
+                    if (!serverName.equals(configuration.getWaitingServerName())) {
+                        api.stop(serverName);
+                    }
+                }
+            }
+        }
     }
 
     /**
