@@ -1,4 +1,4 @@
-package fr.pickaria.pterodactylpoweraction.config;
+package fr.pickaria.pterodactylpoweraction.configuration;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -10,7 +10,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Map;
@@ -26,12 +26,13 @@ public class YamlConfiguration implements Configuration {
     private static final int DEFAULT_MAXIMUM_PING_DURATION = 60; // in seconds
     private static final boolean DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK = false;
 
-    public YamlConfiguration(File file, Logger logger) throws FileNotFoundException {
+    public YamlConfiguration(File file, Logger logger) throws IOException {
         this.logger = logger;
 
         Yaml yaml = new Yaml();
-        InputStream is = new FileInputStream(file);
-        this.config = yaml.load(is);
+        try (InputStream is = new FileInputStream(file)) {
+            this.config = yaml.load(is);
+        }
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.messager.Messager;
 import fr.pickaria.messager.components.Text;
+import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
@@ -18,18 +19,16 @@ import java.util.concurrent.ExecutionException;
 
 public class StartingServer implements ForwardingAudience {
     private final RegisteredServer server;
-    private final PowerActionAPI api;
-    private final Configuration configuration;
+    private final ConfigurationLoader configurationLoader;
     private final ShutdownManager shutdownManager;
     private final Set<Player> waitingPlayers = new HashSet<>();
     private final Logger logger;
     private final Messager messager;
     private boolean isStarting = false;
 
-    public StartingServer(RegisteredServer server, PowerActionAPI api, Configuration configuration, ShutdownManager shutdownManager, Logger logger, Messager messager) {
+    public StartingServer(RegisteredServer server, ConfigurationLoader configurationLoader, ShutdownManager shutdownManager, Logger logger, Messager messager) {
         this.server = server;
-        this.api = api;
-        this.configuration = configuration;
+        this.configurationLoader = configurationLoader;
         this.shutdownManager = shutdownManager;
         this.logger = logger;
         this.messager = messager;
@@ -48,7 +47,7 @@ public class StartingServer implements ForwardingAudience {
         if (!isStarting) {
             isStarting = true;
             String serverName = server.getServerInfo().getName();
-            api.start(serverName).whenComplete((result, exception) -> {
+            configurationLoader.getAPI().start(serverName).whenComplete((result, exception) -> {
                 if (exception == null) {
                     pingUntilUpAndRedirectPlayers();
                 } else {
@@ -64,7 +63,7 @@ public class StartingServer implements ForwardingAudience {
         boolean hasRedirectedAtLeastOnePlayer = false;
 
         try {
-            PingUtils.pingUntilUp(server, configuration.getMaximumPingDuration()).get();
+            PingUtils.pingUntilUp(server, configurationLoader.getConfiguration().getMaximumPingDuration()).get();
             Component serverName = Component.text(server.getServerInfo().getName());
             for (Player player : waitingPlayers) {
                 if (player.isActive()) {

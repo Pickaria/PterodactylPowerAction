@@ -92,6 +92,10 @@ shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
 ```
 
+## In-game command
+
+Reload the configuration: `/pterodactylpoweraction reload`
+
 ## Localization
 
 The plugin's messages are automatically translated based on the client's language and currently support the following

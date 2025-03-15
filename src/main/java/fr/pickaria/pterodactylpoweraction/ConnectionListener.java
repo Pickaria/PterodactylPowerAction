@@ -14,6 +14,7 @@ import fr.pickaria.messager.MessageType;
 import fr.pickaria.messager.Messager;
 import fr.pickaria.messager.components.Text;
 import fr.pickaria.pterodactylpoweraction.component.RunCommand;
+import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
@@ -22,34 +23,24 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ConnectionListener {
+    private final ProxyServer proxy;
     private final Logger logger;
-    private final PowerActionAPI api;
-    private final RegisteredServer waitingServer;
-    private final Configuration configuration;
+    private final ConfigurationLoader configurationLoader;
     private final Map<String, StartingServer> startingServers = new HashMap<>();
     private final ShutdownManager shutdownManager;
     private final Messager messager;
 
     ConnectionListener(
-            Configuration configuration,
+            ConfigurationLoader configurationLoader,
             ProxyServer proxy,
             Logger logger,
-            PowerActionAPI api,
             ShutdownManager shutdownManager
     ) {
-        this.configuration = configuration;
+        this.configurationLoader = configurationLoader;
+        this.proxy = proxy;
         this.logger = logger;
-        this.api = api;
         this.shutdownManager = shutdownManager;
         this.messager = new Messager();
-
-        String waitingServerName = configuration.getWaitingServerName();
-        Optional<RegisteredServer> server = proxy.getServer(waitingServerName);
-        if (server.isPresent()) {
-            this.waitingServer = server.get();
-        } else {
-            throw new RuntimeException("The configured temporary server '" + waitingServerName + "' is not configured in Velocity. Please check your velocity configuration.");
-        }
     }
 
     @Subscribe()
@@ -78,7 +69,8 @@ public class ConnectionListener {
                 event.setResult(ServerPreConnectEvent.ServerResult.denied());
             } else {
                 // Server is not running, inform the player and redirect somewhere else
-                event.setResult(ServerPreConnectEvent.ServerResult.allowed(this.waitingServer));
+                RegisteredServer waitingServer = getWaitingServer();
+                event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer));
             }
 
             String originalServerName = originalServer.getServerInfo().getName();
@@ -88,7 +80,7 @@ public class ConnectionListener {
             if (startingServers.containsKey(originalServerName)) {
                 playerAddedToWaitingList = startingServers.get(originalServerName).addPlayer(event.getPlayer());
             } else {
-                StartingServer startingServer = new StartingServer(originalServer, api, configuration, shutdownManager, logger, messager);
+                StartingServer startingServer = new StartingServer(originalServer, configurationLoader, shutdownManager, logger, messager);
                 playerAddedToWaitingList = startingServer.addPlayer(event.getPlayer());
                 startingServers.put(originalServerName, startingServer);
                 // TODO: Should we clear the entry from the map once the server is started?
@@ -113,10 +105,11 @@ public class ConnectionListener {
     }
 
     private void redirectPlayerToWaitingServerOnKick(KickedFromServerEvent event) {
-        boolean shouldRedirectToWaitingServerOnKick = configuration.getRedirectToWaitingServerOnKick();
-        boolean isKickedFromWaitingServer = event.getServer() == this.waitingServer;
+        RegisteredServer waitingServer = getWaitingServer();
+        boolean shouldRedirectToWaitingServerOnKick = configurationLoader.getConfiguration().getRedirectToWaitingServerOnKick();
+        boolean isKickedFromWaitingServer = event.getServer() == waitingServer;
         boolean isConnectedToWaitingServer = event.getPlayer().getCurrentServer()
-                .map(serverConnection -> serverConnection.getServer() == this.waitingServer)
+                .map(serverConnection -> serverConnection.getServer() == waitingServer)
                 .orElse(false);
 
         if (shouldRedirectToWaitingServerOnKick && !isKickedFromWaitingServer) {
@@ -155,5 +148,15 @@ public class ConnectionListener {
 
     private void scheduleServerShutdown(RegisteredServer registeredServer) {
         shutdownManager.shutdownServer(registeredServer, true);
+    }
+
+    private RegisteredServer getWaitingServer() {
+        String waitingServerName = configurationLoader.getConfiguration().getWaitingServerName();
+        Optional<RegisteredServer> server = proxy.getServer(waitingServerName);
+        if (server.isPresent()) {
+            return server.get();
+        } else {
+            throw new RuntimeException("The configured temporary server '" + waitingServerName + "' is not configured in Velocity. Please check your velocity configuration.");
+        }
     }
 }
