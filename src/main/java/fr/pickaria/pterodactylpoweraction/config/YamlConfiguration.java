@@ -4,7 +4,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
-import fr.pickaria.pterodactylpoweraction.PingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
@@ -142,11 +141,7 @@ public class YamlConfiguration implements Configuration {
         Optional<RegisteredServer> registeredWaitingServer = proxy.getServer(waitingServerName);
 
         if (registeredWaitingServer.isEmpty()) {
-            logger.error("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
-            isValid = false;
-        } else if (!PingUtils.isReachable(registeredWaitingServer.get())) {
-            logger.error("Waiting server '{}' is not reachable.", waitingServerName);
-            isValid = false;
+            logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
         }
 
         // Warn if waiting server is misconfigured in the plugin's own config
