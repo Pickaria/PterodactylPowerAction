@@ -31,12 +31,14 @@ public class PterodactylPowerAction {
     private final ProxyServer proxy;
     private final Logger logger;
     private final ConfigurationLoader configurationLoader;
+    private final ShutdownManager shutdownManager;
 
     @Inject
     public PterodactylPowerAction(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
         this.proxy = server;
         this.logger = logger;
         this.configurationLoader = new ConfigurationLoader(logger, dataDirectory);
+        this.shutdownManager = new ShutdownManager(proxy, this, configurationLoader, logger);
     }
 
     @Subscribe
@@ -50,7 +52,6 @@ public class PterodactylPowerAction {
         );
 
         try {
-            ShutdownManager shutdownManager = new ShutdownManager(proxy, this, configurationLoader, logger);
             ConnectionListener listener = new ConnectionListener(configurationLoader, proxy, logger, shutdownManager);
             proxy.getEventManager().register(this, listener);
         } catch (NoSuchElementException e) {
@@ -71,7 +72,7 @@ public class PterodactylPowerAction {
 
     private void initializeCommand() {
         CommandManager commandManager = proxy.getCommandManager();
-        PterodactylPowerActionCommand pterodactylPowerActionCommand = new PterodactylPowerActionCommand(proxy, logger, configurationLoader);
+        PterodactylPowerActionCommand pterodactylPowerActionCommand = new PterodactylPowerActionCommand(proxy, logger, configurationLoader, shutdownManager);
         BrigadierCommand commandToRegister = pterodactylPowerActionCommand.createBrigadierCommand();
         commandManager.register(pterodactylPowerActionCommand.getCommandMeta(commandManager, this), commandToRegister);
     }

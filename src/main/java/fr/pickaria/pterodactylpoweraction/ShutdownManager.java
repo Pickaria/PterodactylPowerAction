@@ -7,8 +7,10 @@ import com.velocitypowered.api.scheduler.Scheduler;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class ShutdownManager {
     private static ShutdownManager instance;
@@ -31,30 +33,14 @@ public class ShutdownManager {
     /**
      * Start a task that will shut down the server after the configured delay.
      *
-     * @param server            The server we want to shut down
-     * @param playerIsConnected Set this to true if the player is currently connected to the server
+     * @param server The server we want to shut down
      */
-    public void shutdownServer(RegisteredServer server, boolean playerIsConnected) {
-        int playerCount = server.getPlayersConnected().size();
-        if (playerIsConnected) {
-            playerCount--;
-        }
-        if (playerCount <= 0) {
-            Configuration configuration = configurationLoader.getConfiguration();
-            String currentServerName = server.getServerInfo().getName();
-            // Make sure we don't stop the temporary server
-            if (!currentServerName.equals(configuration.getWaitingServerName())) {
-                // Cancel the previous task so we don't have conflicting tasks
-                cancelTask(server);
+    public void scheduleShutdown(RegisteredServer server) {
+        scheduleShutdown(server, configurationLoader.getConfiguration().getShutdownAfterDuration());
+    }
 
-                logger.info("Scheduling a stop task for server {} in {} seconds", currentServerName, configuration.getShutdownAfterDuration().getSeconds());
-                Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
-                        .buildTask(plugin, () -> configurationLoader.getAPI().stop(currentServerName))
-                        .delay(configuration.getShutdownAfterDuration());
-                ScheduledTask scheduledTask = taskBuilder.schedule();
-                shutdownTasks.put(currentServerName, scheduledTask);
-            }
-        }
+    public void scheduleShutdown(RegisteredServer server, Duration afterDuration) {
+        scheduleShutdownTask(server, afterDuration);
     }
 
     /**
@@ -63,10 +49,48 @@ public class ShutdownManager {
      * @param server The server we don't want to stop anymore
      */
     public void cancelTask(RegisteredServer server) {
-        String serverName = server.getServerInfo().getName();
+        String serverName = getServerName(server);
         if (shutdownTasks.containsKey(serverName)) {
-            logger.info("Cancelling shutdown for server {}", serverName);
+            logger.info("Cancelling shutdown for server '{}'.", serverName);
             shutdownTasks.get(serverName).cancel();
+            shutdownTasks.remove(serverName);
         }
+    }
+
+    private CompletableFuture<Boolean> isServerEmpty(RegisteredServer server) {
+        return PingUtils.getPlayerCount(server).thenApply(count -> count == 0);
+    }
+
+    private String getServerName(RegisteredServer server) {
+        return server.getServerInfo().getName();
+    }
+
+    private void scheduleShutdownTask(RegisteredServer server, Duration delay) {
+        String serverName = getServerName(server);
+
+        // Make sure we don't stop the temporary server
+        if (!isWaitingServer(serverName)) {
+            // Cancel the previous task so we don't have conflicting tasks
+            cancelTask(server);
+
+            logger.info("Scheduling server '{}' to shutdown in {} seconds if empty.", serverName, delay.getSeconds());
+            Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
+                    .buildTask(plugin, () -> stopNowIfEmpty(server))
+                    .delay(delay);
+            ScheduledTask scheduledTask = taskBuilder.schedule();
+            shutdownTasks.put(serverName, scheduledTask);
+        }
+    }
+
+    private void stopNowIfEmpty(RegisteredServer server) {
+        isServerEmpty(server).thenAccept(isEmpty -> {
+            if (isEmpty) {
+                configurationLoader.getAPI().stop(getServerName(server));
+            }
+        });
+    }
+
+    private boolean isWaitingServer(String serverName) {
+        return serverName.equals(configurationLoader.getConfiguration().getWaitingServerName());
     }
 }

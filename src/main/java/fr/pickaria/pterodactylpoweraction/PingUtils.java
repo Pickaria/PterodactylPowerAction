@@ -58,4 +58,9 @@ public class PingUtils {
             return false;
         }
     }
+
+    public static CompletableFuture<Integer> getPlayerCount(RegisteredServer server) {
+        return server.ping(PING_OPTIONS)
+                .thenApply(ping -> ping.getPlayers().map(ServerPing.Players::getOnline).orElse(0));
+    }
 }

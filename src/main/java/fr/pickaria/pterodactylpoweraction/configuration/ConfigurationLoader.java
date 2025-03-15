@@ -40,13 +40,13 @@ public class ConfigurationLoader {
     }
 
     public PowerActionAPI getAPI() throws IllegalArgumentException {
-        if (configuration.getAPIType() == APIType.PTERODACTYL) {
-            return new PterodactylAPI(logger, configuration);
+        if (getConfiguration().getAPIType() == APIType.PTERODACTYL) {
+            return new PterodactylAPI(logger, getConfiguration());
         }
-        if (configuration.getAPIType() == APIType.SHELL) {
-            return new ShellCommandAPI(logger, configuration);
+        if (getConfiguration().getAPIType() == APIType.SHELL) {
+            return new ShellCommandAPI(logger, getConfiguration());
         }
-        throw new IllegalArgumentException("Unsupported API type: " + configuration.getAPIType());
+        throw new IllegalArgumentException("Unsupported API type: " + getConfiguration().getAPIType());
     }
 
     /**

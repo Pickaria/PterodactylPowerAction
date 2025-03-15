@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
@@ -98,6 +99,11 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
+    public Set<String> getAllServers() {
+        return getServerMap().keySet();
+    }
+
+    @Override
     public Optional<PowerCommands> getPowerCommands(String serverName) {
         try {
             Map<String, Object> serverConfiguration = (Map<String, Object>) getServerConfiguration(serverName);
@@ -122,8 +128,12 @@ public class YamlConfiguration implements Configuration {
         }
     }
 
+    private Map<String, Object> getServerMap() {
+        return (Map<String, Object>) config.get("servers");
+    }
+
     private @NotNull Object getServerConfiguration(String serverName) throws NoSuchElementException {
-        Map<String, Object> servers = (Map<String, Object>) config.get("servers");
+        Map<String, Object> servers = getServerMap();
         if (servers.containsKey(serverName)) {
             return servers.get(serverName);
         }

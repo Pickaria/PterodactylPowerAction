@@ -92,15 +92,51 @@ shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
 ```
 
-## In-game command
+## In-game Commands
 
-Reload the configuration: `/pterodactylpoweraction reload`
-Run checks and validate the configuration: `/pterodactylpoweraction doctor`
+The plugin's command require the player to have the `pterodactylpoweraction.use` permission.
+
+### Reload Plugin Configuration
+
+To reload the plugin's configuration, use the following command:
+
+```plaintext
+/pterodactylpoweraction reload
+```
+
+> [!NOTE]
+> If you have added a new server to `velocity.toml`, you will need to reload this configuration as well.
+> Currently, PterodactylPowerAction does not automatically reload Velocity's configuration, so you may require an
+> additional plugin for this functionality.
+
+### Shutdown Empty Servers
+
+To manually shut down empty servers, use the following command:
+
+```plaintext
+/pterodactylpoweraction clear [delay=0]
+```
+
+This will check the player count on all servers and send stop signals to all the empty servers after the given delay. If
+not specified, the delay is 0 seconds by default.
+
+### Run Checks and Validate Configuration
+
+To run checks and validate the configuration, use the following command:
+
+```plaintext
+/pterodactylpoweraction doctor
+```
+
+The `doctor` command is a tool for troubleshooting issues with your PterodactylPowerAction setup. It performs a
+series of diagnostic checks to ensure that your configuration files are correctly set up and that all necessary
+components are functioning properly. Running this command can help you identify and resolve potential problems, making
+it an essential part of maintaining a smooth and efficient server environment.
 
 ## Localization
 
-The plugin's messages are automatically translated based on the client's language and currently support the following
-languages:
+The plugin's messages are automatically translated based on the client's language. Currently, the following languages
+are supported:
 
 - German
 - English

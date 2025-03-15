@@ -3,6 +3,7 @@ package fr.pickaria.pterodactylpoweraction;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface Configuration {
     Map<String, Object> getRawConfig();
@@ -24,6 +25,8 @@ public interface Configuration {
     Duration getShutdownAfterDuration();
 
     boolean getRedirectToWaitingServerOnKick();
+
+    Set<String> getAllServers();
 
     record PowerCommands(Optional<String> workingDirectory, String start, String stop) {
     }

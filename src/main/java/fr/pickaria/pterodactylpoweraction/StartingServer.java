@@ -82,7 +82,7 @@ public class StartingServer implements ForwardingAudience {
 
             if (!hasRedirectedAtLeastOnePlayer) {
                 // If we haven't redirected a single player, check if we can stop the server again
-                shutdownManager.shutdownServer(server, false);
+                shutdownManager.scheduleShutdown(server);
             }
         } catch (CancellationException | ExecutionException | InterruptedException exception) {
             informError(exception);
