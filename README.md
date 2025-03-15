@@ -92,13 +92,26 @@ shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
 ```
 
-## Limbo servers
+## Localization
+
+The plugin's messages are automatically translated based on the client's language and currently support the following
+languages:
+
+- German
+- English
+- French
+
+## Waiting/Limbo servers
 
 Here is a small list of recommended lightweights servers software to use as waiting server:
 
 - [Limbo](https://www.spigotmc.org/resources/82468/)
 - [NanoLimbo](https://www.spigotmc.org/resources/86198/)
-- [Quozul/McServer](https://github.com/Quozul/McServer)
+- [Quozul/PicoLimbo](https://github.com/Quozul/PicoLimbo) - Experimental, does not work with Velocity yet.
+
+Note that the waiting server does not have to be a limbo server specifically, it can be any server as long as it is
+always accessible. If you have a dedicated lobby server in your network, you can use that, no need for a dedicated limbo
+server!
 
 ## Motivations
 
