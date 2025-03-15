@@ -47,43 +47,69 @@ public class PterodactylAPI implements PowerActionAPI {
         return makeRequest(identifier, "start");
     }
 
-    private CompletableFuture<Void> makeRequest(String server, String action) {
-        CompletableFuture<Void> future = new CompletableFuture<>(); // TODO: This could be simplified
+    public CompletableFuture<Boolean> exists(String server) {
+        Optional<String> serverIdentifier = configuration.getPterodactylServerIdentifier(server);
+        if (serverIdentifier.isEmpty()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        String identifier = serverIdentifier.get();
+
+        HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                    .uri(new URI(configuration.getPterodactylClientApiBaseURL().get() + "/servers/" + identifier))
+                    .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().get())
+                    .GET()
+                    .build();
+        } catch (URISyntaxException e) {
+            return CompletableFuture.failedFuture(e);
+        }
+
+        return sendRequest(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    int statusCode = response.statusCode();
+                    if (statusCode == 200) {
+                        String contentType = response.headers().firstValue("Content-Type").orElse("");
+                        return contentType.contains("application/json");
+                    } else if (statusCode == 404) {
+                        return false;
+                    } else {
+                        throw new RuntimeException("Unexpected response code: " + statusCode);
+                    }
+                });
+    }
+
+    private CompletableFuture<Void> makeRequest(String identifier, String action) {
         assert action.equals("start") || action.equals("stop");
+        String jsonBody = "{\"signal\":\"" + action + "\"}";
+        HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                    .uri(new URI(configuration.getPterodactylClientApiBaseURL().get() + "/servers/" + identifier + "/power"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().get())
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+        } catch (URISyntaxException e) {
+            return CompletableFuture.failedFuture(e);
+        }
 
-        CompletableFuture.runAsync(() -> {
-            String jsonBody = "{\"signal\":\"" + action + "\"}";
+        return sendRequest(request, HttpResponse.BodyHandlers.discarding())
+                .thenAccept(response -> {
+                    int statusCode = response.statusCode();
+                    if (statusCode < 200 || statusCode >= 300) {
+                        throw new RuntimeException("Unexpected response code: " + statusCode);
+                    }
+                });
+    }
 
-            HttpRequest request = null;
+    private <T> CompletableFuture<HttpResponse<T>> sendRequest(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                request = HttpRequest.newBuilder()
-                        .uri(new URI(configuration.getPterodactylClientApiBaseURL().get() + "/servers/" + server + "/power"))
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().get())
-                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                        .build();
-            } catch (URISyntaxException e) {
-                future.completeExceptionally(e);
-            }
-
-            HttpResponse<Void> response;
-            try {
-                response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+                return httpClient.send(request, handler);
             } catch (IOException | InterruptedException e) {
-                future.completeExceptionally(e);
-                return;
-            }
-
-            int statusCode = response.statusCode();
-            if (statusCode >= 200 && statusCode < 300) {
-                // Response code is in the 200-299 range, complete successfully
-                future.complete(null);
-            } else {
-                // Response code is not in the 200-299 range, complete exceptionally with IOException
-                future.completeExceptionally(new IOException("Unexpected response code: " + statusCode));
+                throw new RuntimeException(e);
             }
         });
-
-        return future;
     }
 }

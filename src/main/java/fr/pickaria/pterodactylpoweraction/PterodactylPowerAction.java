@@ -71,7 +71,7 @@ public class PterodactylPowerAction {
 
     private void initializeCommand() {
         CommandManager commandManager = proxy.getCommandManager();
-        PterodactylPowerActionCommand pterodactylPowerActionCommand = new PterodactylPowerActionCommand(configurationLoader);
+        PterodactylPowerActionCommand pterodactylPowerActionCommand = new PterodactylPowerActionCommand(proxy, logger, configurationLoader);
         BrigadierCommand commandToRegister = pterodactylPowerActionCommand.createBrigadierCommand();
         commandManager.register(pterodactylPowerActionCommand.getCommandMeta(commandManager, this), commandToRegister);
     }

@@ -95,6 +95,7 @@ redirect_to_waiting_server_on_kick: true
 ## In-game command
 
 Reload the configuration: `/pterodactylpoweraction reload`
+Run checks and validate the configuration: `/pterodactylpoweraction doctor`
 
 ## Localization
 

@@ -1,7 +1,5 @@
 package fr.pickaria.pterodactylpoweraction.configuration;
 
-import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.APIType;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +14,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.UUID;
 
 public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
@@ -33,6 +30,11 @@ public class YamlConfiguration implements Configuration {
         try (InputStream is = new FileInputStream(file)) {
             this.config = yaml.load(is);
         }
+    }
+
+    @Override
+    public Map<String, Object> getRawConfig() {
+        return config;
     }
 
     @Override
@@ -120,67 +122,6 @@ public class YamlConfiguration implements Configuration {
         }
     }
 
-    @Override
-    public boolean validateConfig(ProxyServer proxy) {
-        boolean isValid = true;
-
-        // Validate API-specific configuration
-        if (getAPIType() == APIType.PTERODACTYL) {
-            if (!config.containsKey("pterodactyl_client_api_base_url")) {
-                logger.error("'pterodactyl_client_api_base_url' is missing but required when type is 'pterodactyl'.");
-                isValid = false;
-            }
-            Optional<String> apiKeyOpt = getPterodactylApiKey();
-            if (apiKeyOpt.isEmpty() || !apiKeyOpt.get().startsWith("ptlc_")) {
-                logger.error("Invalid API key. Please create an API Key from your account's page.");
-                isValid = false;
-            }
-        }
-
-        // Validate waiting server configuration
-        String waitingServerName = getWaitingServerName();
-        Optional<RegisteredServer> registeredWaitingServer = proxy.getServer(waitingServerName);
-
-        if (registeredWaitingServer.isEmpty()) {
-            logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
-        }
-
-        // Warn if waiting server is misconfigured in the plugin's own config
-        if (config.containsKey("servers")) {
-            Map<String, Object> servers = (Map<String, Object>) config.get("servers");
-            if (servers.containsKey(waitingServerName)) {
-                logger.warn("Waiting server '{}' should not be configured in the plugin's configuration.", waitingServerName);
-                servers.remove(waitingServerName);
-            }
-
-            servers.forEach((key, value) -> {
-                if (proxy.getServer(key).isEmpty()) {
-                    logger.warn("The server '{}' is missing in 'velocity.toml'.", key);
-                }
-
-                if (getAPIType() == APIType.PTERODACTYL) {
-                    String uuid = (String) value;
-                    if (!this.isUUID(uuid)) {
-                        logger.warn("The identifier '{}' for server '{}' must be a valid UUID. You can find the 'Server ID' under the 'Settings' tab of your server on your Pterodactyl panel.", uuid, key);
-                    }
-                }
-            });
-        }
-
-        // Warn about missing optional configurations
-        if (!config.containsKey("maximum_ping_duration")) {
-            logger.warn("'maximum_ping_duration' is not provided, using default value of '{}'.", DEFAULT_MAXIMUM_PING_DURATION);
-        }
-        if (!config.containsKey("shutdown_after_duration")) {
-            logger.warn("'shutdown_after_duration' is not provided, using default value of '{}'.", DEFAULT_SHUTDOWN_AFTER_DURATION);
-        }
-        if (!config.containsKey("redirect_to_waiting_server_on_kick")) {
-            logger.warn("'redirect_to_waiting_server_on_kick' is not provided, using default value of '{}'.", DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK);
-        }
-
-        return isValid;
-    }
-
     private @NotNull Object getServerConfiguration(String serverName) throws NoSuchElementException {
         Map<String, Object> servers = (Map<String, Object>) config.get("servers");
         if (servers.containsKey(serverName)) {
@@ -198,15 +139,6 @@ public class YamlConfiguration implements Configuration {
             return (String) configValue;
         }
         throw new ClassCastException(key + " must be of type String");
-    }
-
-    private boolean isUUID(String uuid) {
-        try {
-            UUID.fromString(uuid);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private static @NotNull String removeTrailingSlash(@NotNull String s) {
