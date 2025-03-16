@@ -100,7 +100,8 @@ The shutdown behaviour defines what to do when the proxy shuts down. This settin
 - `nothing`: does nothing and keeps all backend servers running
 - `shutdown_empty`: shutdown all empty servers
 - `shutdown_all`: shutdown all, including non-empty servers
-  If this setting is not set, it defaults to `shutdown_all`.
+
+If this setting is not set, it defaults to `shutdown_all`.
 
 ## In-game Commands
 
@@ -140,8 +141,7 @@ To run checks and validate the configuration, use the following command:
 
 The `doctor` command is a tool for troubleshooting issues with your PterodactylPowerAction setup. It performs a
 series of diagnostic checks to ensure that your configuration files are correctly set up and that all necessary
-components are functioning properly. Running this command can help you identify and resolve potential problems, making
-it an essential part of maintaining a smooth and efficient server environment.
+components are functioning properly. Running this command can help you identify and resolve potential problems.
 
 ## Localization
 
@@ -158,7 +158,10 @@ Here is a small list of recommended lightweights servers software to use as wait
 
 - [Limbo](https://www.spigotmc.org/resources/82468/)
 - [NanoLimbo](https://www.spigotmc.org/resources/86198/)
-- [Quozul/PicoLimbo](https://github.com/Quozul/PicoLimbo) - Experimental, does not work with Velocity yet.
+
+I am also developing my own experimental [PicoLimbo](https://github.com/Quozul/PicoLimbo) server from scratch in Rust.
+It has 0% CPU usage on idle and uses less than 10 MB of memory with minimal network footprint by only implementing the
+required packets.
 
 Note that the waiting server does not have to be a limbo server specifically, it can be any server as long as it is
 always accessible. If you have a dedicated lobby server in your network, you can use that, no need for a dedicated limbo
@@ -166,7 +169,16 @@ server!
 
 ## Motivations
 
-I am running Minecraft servers on dedicated hardware at home, and I wanted to save energy costs by stopping empty
-servers.
+I am running Minecraft servers on dedicated hardware at home, I wanted to save energy costs and memory usage by stopping
+empty servers. Running the waiting server on a low power ARM Single Board Computer can also further save costs.
 
-My Limbo server is running on a low power ARM Single Board Computer to further save costs.
+## Contributing
+
+Contributions are welcome! If you encounter any issues or have suggestions for improvement, please submit an issue or
+pull request on GitHub. Make sure to follow the existing code style and include relevant tests.
+
+1. Fork the repository.
+2. Create a new branch `git checkout -b <branch-name>`.
+3. Make changes and commit `git commit -m 'Add some feature'`.
+4. Push to your fork `git push origin <branch-name>`.
+5. Submit a pull request.
