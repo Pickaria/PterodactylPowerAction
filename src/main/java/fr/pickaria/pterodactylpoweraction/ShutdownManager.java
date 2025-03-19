@@ -75,7 +75,7 @@ public class ShutdownManager {
     public void cancelTask(RegisteredServer server) {
         String serverName = getServerName(server);
         if (shutdownTasks.containsKey(serverName)) {
-            logger.info("Cancelling shutdown for server '{}'.", serverName);
+            logger.debug("Cancelling shutdown for server '{}'.", serverName);
             shutdownTasks.get(serverName).cancel();
             shutdownTasks.remove(serverName);
         }
@@ -97,7 +97,7 @@ public class ShutdownManager {
             // Cancel the previous task so we don't have conflicting tasks
             cancelTask(server);
 
-            logger.info("Scheduling server '{}' to shutdown in {} seconds if empty.", serverName, delay.getSeconds());
+            logger.debug("Scheduling server '{}' to shutdown in {} seconds if empty.", serverName, delay.getSeconds());
             Scheduler.TaskBuilder taskBuilder = proxy.getScheduler()
                     .buildTask(plugin, () -> stopNowIfEmpty(server))
                     .delay(delay);
