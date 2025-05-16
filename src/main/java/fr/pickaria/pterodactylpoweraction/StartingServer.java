@@ -5,7 +5,10 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.messager.Messager;
 import fr.pickaria.messager.components.Text;
+import fr.pickaria.pterodactylpoweraction.configuration.APIType;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
+import fr.pickaria.pterodactylpoweraction.online.PingOnlineChecker;
+import fr.pickaria.pterodactylpoweraction.online.PterodactylOnlineChecker;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
@@ -15,6 +18,7 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 public class StartingServer implements ForwardingAudience {
@@ -35,7 +39,7 @@ public class StartingServer implements ForwardingAudience {
     }
 
     /**
-     * Add a player then start the server if required.
+     * Add a player, then start the server if required.
      * If the server is already in a starting state, the player will be redirected alongside the other waiting players.
      *
      * @param player Player to add to the waiting room
@@ -63,7 +67,7 @@ public class StartingServer implements ForwardingAudience {
         boolean hasRedirectedAtLeastOnePlayer = false;
 
         try {
-            PingUtils.pingUntilUp(server, configurationLoader.getConfiguration().getMaximumPingDuration()).get();
+            isOnline();
             Component serverName = Component.text(server.getServerInfo().getName());
             for (Player player : waitingPlayers) {
                 if (player.isActive()) {
@@ -84,7 +88,7 @@ public class StartingServer implements ForwardingAudience {
                 // If we haven't redirected a single player, check if we can stop the server again
                 shutdownManager.scheduleShutdown(server);
             }
-        } catch (CancellationException | ExecutionException | InterruptedException exception) {
+        } catch (CompletionException | CancellationException | ExecutionException | InterruptedException exception) {
             informError(exception);
         } finally {
             isStarting = false;
@@ -96,6 +100,20 @@ public class StartingServer implements ForwardingAudience {
         String serverName = server.getServerInfo().getName();
         logger.error("An error occurred while starting the server {}", serverName, throwable);
         messager.error(this, "failed.to.start.server", new Text(Component.text(serverName)));
+    }
+
+    private void isOnline() throws ExecutionException, InterruptedException {
+        getOnlineChecker().isOnline().get();
+    }
+
+    private OnlineChecker getOnlineChecker() {
+        Configuration configuration = configurationLoader.getConfiguration();
+
+        if (configuration.getAPIType() == APIType.PTERODACTYL) {
+            return new PterodactylOnlineChecker(server, configuration);
+        } else {
+            return new PingOnlineChecker(server, configuration);
+        }
     }
 
     @Override
