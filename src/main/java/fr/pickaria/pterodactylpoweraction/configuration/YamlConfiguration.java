@@ -22,6 +22,7 @@ public class YamlConfiguration implements Configuration {
     private static final int DEFAULT_SHUTDOWN_AFTER_DURATION = 3_600; // in seconds
     private static final int DEFAULT_MAXIMUM_PING_DURATION = 60; // in seconds
     private static final boolean DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK = false;
+    private static final PingMethod DEFAULT_PING_METHOD = PingMethod.PING;
 
     public YamlConfiguration(File file, Logger logger) throws IOException {
         this.logger = logger;
@@ -58,11 +59,7 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public Optional<String> getPterodactylApiKey() {
-        try {
-            return Optional.of(getConfigurationString("pterodactyl_api_key"));
-        } catch (NoSuchElementException | ClassCastException e) {
-            return Optional.empty();
-        }
+        return getOptionalString("pterodactyl_api_key");
     }
 
     @Override
@@ -90,6 +87,12 @@ public class YamlConfiguration implements Configuration {
     @Override
     public @NotNull String getWaitingServerName() throws NoSuchElementException, ClassCastException {
         return getConfigurationString("waiting_server_name");
+    }
+
+    @Override
+    public PingMethod getPingMethod() {
+        Optional<String> pingMethod = getOptionalString("ping_method");
+        return pingMethod.map(s -> PingMethod.valueOf(s.toUpperCase())).orElse(DEFAULT_PING_METHOD);
     }
 
     @Override
@@ -161,6 +164,14 @@ public class YamlConfiguration implements Configuration {
             return (String) configValue;
         }
         throw new ClassCastException(key + " must be of type String");
+    }
+
+    private Optional<String> getOptionalString(String key) {
+        try {
+            return Optional.of(getConfigurationString(key));
+        } catch (NoSuchElementException | ClassCastException e) {
+            return Optional.empty();
+        }
     }
 
     private static @NotNull String removeTrailingSlash(@NotNull String s) {

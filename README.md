@@ -55,6 +55,11 @@ servers:
   # The Server ID can be found under the "Debug Information" section in the "Settings" tab of your server
   survival: "Server ID"
 waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
+# "ping" will ping the server through the Velocity proxy to check if the server is running
+# "pterodactyl" will use the Pterodactyl API instead, you may use this if you encounter issues with the regular ping
+# The ping method is lighter and usually faster, however, the pterodactyl method may be more accurate
+# Note that "pterodactyl_api_key" and "pterodactyl_client_api_base_url" must be configured to use the pterodactyl method
+ping_method: "ping" # can be "ping" or "pterodactyl", defaults to ping
 maximum_ping_duration: 60 # in seconds, defaults to 1 minute
 shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
 redirect_to_waiting_server_on_kick: true # defaults to false
@@ -88,9 +93,11 @@ servers:
     start: docker compose start survival
     stop: docker compose stop survival
 waiting_server_name: "limbo"
+ping_method: "ping"
 maximum_ping_duration: 60
 shutdown_after_duration: 3_600
 redirect_to_waiting_server_on_kick: true
+shutdown_behaviour: "shutdown_all"
 ```
 
 ### Shutdown Behaviour

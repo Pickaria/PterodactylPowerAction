@@ -55,7 +55,7 @@ public class ConfigurationLoader {
     public OnlineChecker getOnlineChecker(RegisteredServer server) {
         Configuration configuration = getConfiguration();
 
-        if (configuration.getAPIType() == APIType.PTERODACTYL) {
+        if (configuration.getPingMethod() == PingMethod.PTERODACTYL) {
             return new PterodactylOnlineChecker(server, configuration);
         } else {
             return new PingOnlineChecker(server, configuration);

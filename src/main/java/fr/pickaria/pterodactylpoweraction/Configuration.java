@@ -1,6 +1,7 @@
 package fr.pickaria.pterodactylpoweraction;
 
 import fr.pickaria.pterodactylpoweraction.configuration.APIType;
+import fr.pickaria.pterodactylpoweraction.configuration.PingMethod;
 import fr.pickaria.pterodactylpoweraction.configuration.ShutdownBehaviour;
 
 import java.time.Duration;
@@ -24,6 +25,8 @@ public interface Configuration {
     Optional<PowerCommands> getPowerCommands(String serverName);
 
     String getWaitingServerName();
+
+    PingMethod getPingMethod();
 
     Duration getMaximumPingDuration();
 
