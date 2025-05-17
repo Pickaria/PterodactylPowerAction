@@ -64,20 +64,11 @@ public class StartingServer implements ForwardingAudience {
         boolean hasRedirectedAtLeastOnePlayer = false;
 
         try {
-            isOnline();
-            Component serverName = Component.text(server.getServerInfo().getName());
+            waitForServer();
+
             for (Player player : waitingPlayers) {
                 if (player.isActive()) {
-                    // TODO: We could map on all players then wait for all the futures to complete at once
-                    ConnectionRequestBuilder.Result result = player.createConnectionRequest(server).connect().get();
-                    if (result.isSuccessful()) {
-                        hasRedirectedAtLeastOnePlayer = result.isSuccessful();
-                    } else {
-                        result.getReasonComponent().ifPresentOrElse(
-                                (reason) -> messager.error(player, "failed.to.redirect.reason", new Text(serverName), new Text(reason)),
-                                () -> messager.error(player, "failed.to.redirect", new Text(serverName))
-                        );
-                    }
+                    hasRedirectedAtLeastOnePlayer = redirectPlayer(player);
                 }
             }
 
@@ -95,12 +86,32 @@ public class StartingServer implements ForwardingAudience {
 
     private void informError(Throwable throwable) {
         String serverName = server.getServerInfo().getName();
-        logger.error("An error occurred while starting the server {}", serverName, throwable);
+        logger.error("An error occurred while starting the server '{}'", serverName, throwable);
         messager.error(this, "failed.to.start.server", new Text(Component.text(serverName)));
     }
 
-    private void isOnline() throws ExecutionException, InterruptedException {
+    private void waitForServer() throws ExecutionException, InterruptedException {
         configurationLoader.getOnlineChecker(server).waitForRunning().get();
+    }
+
+    private boolean redirectPlayer(Player player) {
+        String serverName = server.getServerInfo().getName();
+        Component serverNameComponent = Component.text(serverName);
+        try {
+            ConnectionRequestBuilder.Result result = player.createConnectionRequest(server).connect().get();
+            if (result.isSuccessful()) {
+                return result.isSuccessful();
+            } else {
+                result.getReasonComponent().ifPresentOrElse(
+                        (reason) -> messager.error(player, "failed.to.redirect.reason", new Text(serverNameComponent), new Text(reason)),
+                        () -> messager.error(player, "failed.to.redirect", new Text(serverNameComponent))
+                );
+            }
+        } catch (CancellationException | ExecutionException | InterruptedException exception) {
+            logger.error("An error occurred while redirecting the player '{}' to the server '{}'", player.getUsername(), serverName, exception);
+            messager.error(player, "failed.to.redirect", new Text(serverNameComponent));
+        }
+        return false;
     }
 
     @Override
