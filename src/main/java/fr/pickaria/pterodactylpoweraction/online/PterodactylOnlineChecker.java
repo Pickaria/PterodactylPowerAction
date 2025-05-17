@@ -28,7 +28,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
     }
 
     @Override
-    public CompletableFuture<Void> isOnline() {
+    public CompletableFuture<Void> waitForRunning() {
         String serverId = configuration
                 .getPterodactylServerIdentifier(server.getServerInfo().getName())
                 .orElseThrow(() -> new NoSuchElementException("No Pterodactyl server id for " + server.getServerInfo().getName()));
@@ -193,6 +193,57 @@ public class PterodactylOnlineChecker implements OnlineChecker {
 
         public List<String> getArgs() {
             return args;
+        }
+    }
+
+    @Override
+    public boolean isRunningNow() {
+        String serverId = configuration
+                .getPterodactylServerIdentifier(server.getServerInfo().getName())
+                .orElseThrow(() -> new NoSuchElementException("No Pterodactyl server id for " + server.getServerInfo().getName()));
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(configuration.getPterodactylClientApiBaseURL().orElseThrow() + "/servers/" + serverId + "/resources"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().orElseThrow())
+                .GET()
+                .build();
+
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            int statusCode = response.statusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new IllegalStateException("Unexpected status: " + statusCode + " – " + response.body());
+            }
+
+            ServerResourcesResponse resourcesResponse = new Gson().fromJson(response.body(), ServerResourcesResponse.class);
+            return "running".equalsIgnoreCase(resourcesResponse.getAttributes().getCurrentState());
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Response model for the server resources endpoint
+     */
+    private static class ServerResourcesResponse {
+        @SerializedName("attributes")
+        private ServerAttributes attributes;
+
+        public ServerAttributes getAttributes() {
+            return attributes;
+        }
+
+        private static class ServerAttributes {
+            @SerializedName("current_state")
+            private String currentState;
+
+            public String getCurrentState() {
+                return currentState;
+            }
         }
     }
 }

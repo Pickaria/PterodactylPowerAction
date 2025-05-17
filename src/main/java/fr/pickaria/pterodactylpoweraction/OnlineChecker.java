@@ -3,5 +3,7 @@ package fr.pickaria.pterodactylpoweraction;
 import java.util.concurrent.CompletableFuture;
 
 public interface OnlineChecker {
-    CompletableFuture<Void> isOnline();
+    CompletableFuture<Void> waitForRunning();
+
+    boolean isRunningNow();
 }

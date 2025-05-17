@@ -1,9 +1,13 @@
 package fr.pickaria.pterodactylpoweraction.configuration;
 
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.Configuration;
+import fr.pickaria.pterodactylpoweraction.OnlineChecker;
 import fr.pickaria.pterodactylpoweraction.PowerActionAPI;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
 import fr.pickaria.pterodactylpoweraction.api.ShellCommandAPI;
+import fr.pickaria.pterodactylpoweraction.online.PingOnlineChecker;
+import fr.pickaria.pterodactylpoweraction.online.PterodactylOnlineChecker;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -46,6 +50,16 @@ public class ConfigurationLoader {
             return new ShellCommandAPI(logger, getConfiguration());
         }
         throw new IllegalArgumentException("Unsupported API type: " + getConfiguration().getAPIType());
+    }
+
+    public OnlineChecker getOnlineChecker(RegisteredServer server) {
+        Configuration configuration = getConfiguration();
+
+        if (configuration.getAPIType() == APIType.PTERODACTYL) {
+            return new PterodactylOnlineChecker(server, configuration);
+        } else {
+            return new PingOnlineChecker(server, configuration);
+        }
     }
 
     /**

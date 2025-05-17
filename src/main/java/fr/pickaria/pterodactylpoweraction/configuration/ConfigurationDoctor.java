@@ -3,8 +3,8 @@ package fr.pickaria.pterodactylpoweraction.configuration;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.Configuration;
-import fr.pickaria.pterodactylpoweraction.PingUtils;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
+import fr.pickaria.pterodactylpoweraction.online.PingOnlineChecker;
 import org.slf4j.Logger;
 
 import java.nio.file.Files;
@@ -50,7 +50,7 @@ public class ConfigurationDoctor {
         if (registeredWaitingServer.isEmpty()) {
             logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
             isValid = false;
-        } else if (!PingUtils.isReachable(registeredWaitingServer.get())) {
+        } else if (!isReachable(registeredWaitingServer.get(), configuration)) {
             logger.warn("Waiting server '{}' is not reachable. Make sure it is always running and accessible.", waitingServerName);
             isValid = false;
         }
@@ -151,5 +151,9 @@ public class ConfigurationDoctor {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private boolean isReachable(RegisteredServer server, Configuration configuration) {
+        return new PingOnlineChecker(server, configuration).isRunningNow();
     }
 }

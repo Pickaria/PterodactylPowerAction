@@ -59,7 +59,7 @@ public class ConnectionListener {
 
         shutdownManager.cancelTask(originalServer);
 
-        if (PingUtils.isReachable(originalServer)) { // FIXME: This is blocking the main thread
+        if (isReachable(originalServer)) {
             // Server pinged successfully, we can connect the player to this server
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(originalServer));
         } else {
@@ -159,5 +159,10 @@ public class ConnectionListener {
         } else {
             throw new RuntimeException("The configured temporary server '" + waitingServerName + "' is not configured in Velocity. Please check your velocity configuration.");
         }
+    }
+
+    private boolean isReachable(RegisteredServer server) {
+        // FIXME: This may be blocking the main thread
+        return configurationLoader.getOnlineChecker(server).isRunningNow();
     }
 }

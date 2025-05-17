@@ -5,10 +5,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.messager.Messager;
 import fr.pickaria.messager.components.Text;
-import fr.pickaria.pterodactylpoweraction.configuration.APIType;
 import fr.pickaria.pterodactylpoweraction.configuration.ConfigurationLoader;
-import fr.pickaria.pterodactylpoweraction.online.PingOnlineChecker;
-import fr.pickaria.pterodactylpoweraction.online.PterodactylOnlineChecker;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
@@ -103,17 +100,7 @@ public class StartingServer implements ForwardingAudience {
     }
 
     private void isOnline() throws ExecutionException, InterruptedException {
-        getOnlineChecker().isOnline().get();
-    }
-
-    private OnlineChecker getOnlineChecker() {
-        Configuration configuration = configurationLoader.getConfiguration();
-
-        if (configuration.getAPIType() == APIType.PTERODACTYL) {
-            return new PterodactylOnlineChecker(server, configuration);
-        } else {
-            return new PingOnlineChecker(server, configuration);
-        }
+        configurationLoader.getOnlineChecker(server).waitForRunning().get();
     }
 
     @Override
