@@ -1,7 +1,6 @@
 package fr.pickaria.pterodactylpoweraction.online;
 
 import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.OnlineChecker;
@@ -29,10 +28,30 @@ public class PterodactylOnlineChecker implements OnlineChecker {
 
     @Override
     public CompletableFuture<Void> waitForRunning() {
+        return checkServerStatusViaWebSocket(true);
+    }
+
+    @Override
+    public boolean isRunningNow() {
+        try {
+            checkServerStatusViaWebSocket(false).get();
+            return true;
+        } catch (ExecutionException | InterruptedException | CancellationException ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks server status using WebSocket
+     *
+     * @param waitUntilRunning if true, will wait until the server is running; if false, will check current status
+     * @return CompletableFuture that completes when the server is running or with the current status
+     */
+    private CompletableFuture<Void> checkServerStatusViaWebSocket(boolean waitUntilRunning) {
         String serverId = configuration
                 .getPterodactylServerIdentifier(server.getServerInfo().getName())
                 .orElseThrow(() -> new NoSuchElementException("No Pterodactyl server id for " + server.getServerInfo().getName()));
-        WebSocketCredentialsResponse.Data websocketCredentials = getWebsocketCredentials(serverId, configuration);
+        PterodactylWebSocketCredentialsResponse.Data websocketCredentials = getWebsocketCredentials(serverId, configuration);
 
         URI base = URI.create(configuration.getPterodactylClientApiBaseURL().orElseThrow(() -> new IllegalStateException("No base URL")));
         String origin = base.getScheme() + "://" + base.getHost() + (base.getPort() == -1 ? "" : ":" + base.getPort());
@@ -43,7 +62,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         // Schedule the timeout to fire an exception if we don't complete in time.
         ScheduledFuture<?> timeoutTask = scheduler.schedule(
-                () -> result.completeExceptionally(new CompletionException(new TimeoutException("Timed out waiting for server to start"))),
+                () -> result.completeExceptionally(new CompletionException(new TimeoutException("Timed out waiting for server status"))),
                 timeout.toMillis(),
                 TimeUnit.MILLISECONDS
         );
@@ -59,17 +78,26 @@ public class PterodactylOnlineChecker implements OnlineChecker {
                     public void onOpen(WebSocket webSocket) {
                         webSocketReference.set(webSocket);
                         requestMore(webSocket);
-                        sendJson(webSocket, new Payload("auth", List.of(websocketCredentials.getToken())));
-                        sendJson(webSocket, new Payload("send stats"));
+                        sendJson(webSocket, new PterodactylWebSocketPayload("auth", List.of(websocketCredentials.getToken())));
+                        sendJson(webSocket, new PterodactylWebSocketPayload("send stats"));
                     }
 
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
                         try {
-                            Payload p = new Gson().fromJson(data.toString(), Payload.class);
-                            if ("status".equals(p.getEvent()) && !p.getArgs().isEmpty() && "running".equalsIgnoreCase(p.getArgs().get(0))) {
-                                // Completed successfully: server is running
-                                if (result.complete(null)) {
+                            PterodactylWebSocketPayload p = new Gson().fromJson(data.toString(), PterodactylWebSocketPayload.class);
+                            if ("status".equals(p.getEvent()) && !p.getArgs().isEmpty()) {
+                                String status = p.getArgs().get(0);
+
+                                if ("running".equalsIgnoreCase(status)) {
+                                    // Completed successfully: server is running
+                                    if (result.complete(null)) {
+                                        timeoutTask.cancel(false);
+                                        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done");
+                                    }
+                                } else if (!waitUntilRunning) {
+                                    // If we're just checking status, complete with exception if not running
+                                    result.completeExceptionally(new CompletionException(new IllegalStateException("Server status: " + status)));
                                     timeoutTask.cancel(false);
                                     webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done");
                                 }
@@ -90,7 +118,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
                     @Override
                     public CompletionStage<?> onClose(WebSocket ws, int status, String reason) {
                         if (!result.isDone()) {
-                            result.completeExceptionally(new CompletionException(new IllegalStateException("WebSocket closed before server reported running")));
+                            result.completeExceptionally(new CompletionException(new IllegalStateException("WebSocket closed before server status was determined")));
                             timeoutTask.cancel(false);
                         }
                         return WebSocket.Listener.super.onClose(ws, status, reason);
@@ -120,7 +148,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
         return result;
     }
 
-    private WebSocketCredentialsResponse.Data getWebsocketCredentials(String serverIdentifier, Configuration configuration) throws IllegalArgumentException, NoSuchElementException {
+    private PterodactylWebSocketCredentialsResponse.Data getWebsocketCredentials(String serverIdentifier, Configuration configuration) throws IllegalArgumentException, NoSuchElementException {
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -139,111 +167,10 @@ public class PterodactylOnlineChecker implements OnlineChecker {
                 throw new IllegalStateException("Unexpected status: " + statusCode + " – " + response.body());
             }
 
-            WebSocketCredentialsResponse webSocketCredentials = new Gson().fromJson(response.body(), WebSocketCredentialsResponse.class);
+            PterodactylWebSocketCredentialsResponse webSocketCredentials = new Gson().fromJson(response.body(), PterodactylWebSocketCredentialsResponse.class);
             return webSocketCredentials.getData();
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static class WebSocketCredentialsResponse {
-        @SerializedName("data")
-        private Data data;
-
-        public Data getData() {
-            return data;
-        }
-
-        private static class Data {
-            @SerializedName("token")
-            private String token;
-
-            @SerializedName("socket")
-            private String socket;
-
-            public String getToken() {
-                return token;
-            }
-
-            public String getSocket() {
-                return socket;
-            }
-        }
-    }
-
-    private static class Payload {
-        Payload(String event, List<String> args) {
-            this.event = event;
-            this.args = args;
-        }
-
-        Payload(String event) {
-            this(event, List.of());
-        }
-
-        @SerializedName("event")
-        private String event;
-
-        @SerializedName("args")
-        private List<String> args;
-
-        public String getEvent() {
-            return event;
-        }
-
-        public List<String> getArgs() {
-            return args;
-        }
-    }
-
-    @Override
-    public boolean isRunningNow() {
-        String serverId = configuration
-                .getPterodactylServerIdentifier(server.getServerInfo().getName())
-                .orElseThrow(() -> new NoSuchElementException("No Pterodactyl server id for " + server.getServerInfo().getName()));
-
-        HttpClient client = HttpClient.newHttpClient();
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(configuration.getPterodactylClientApiBaseURL().orElseThrow() + "/servers/" + serverId + "/resources"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + configuration.getPterodactylApiKey().orElseThrow())
-                .GET()
-                .build();
-
-        try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            int statusCode = response.statusCode();
-            if (statusCode < 200 || statusCode >= 300) {
-                throw new IllegalStateException("Unexpected status: " + statusCode + " – " + response.body());
-            }
-
-            ServerResourcesResponse resourcesResponse = new Gson().fromJson(response.body(), ServerResourcesResponse.class);
-            return "running".equalsIgnoreCase(resourcesResponse.getAttributes().getCurrentState());
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Response model for the server resources endpoint
-     */
-    private static class ServerResourcesResponse {
-        @SerializedName("attributes")
-        private ServerAttributes attributes;
-
-        public ServerAttributes getAttributes() {
-            return attributes;
-        }
-
-        private static class ServerAttributes {
-            @SerializedName("current_state")
-            private String currentState;
-
-            public String getCurrentState() {
-                return currentState;
-            }
         }
     }
 }
