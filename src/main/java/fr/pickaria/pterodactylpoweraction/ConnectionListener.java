@@ -116,6 +116,7 @@ public class ConnectionListener {
             if (isConnectedToWaitingServer) {
                 event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
             } else {
+                // TODO: If the waiting server is not reachable, we should kick instead
                 event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
             }
             scheduleServerShutdown(event.getServer());
@@ -125,7 +126,7 @@ public class ConnectionListener {
     }
 
     private Component getKickDisconnectMessage(KickedFromServerEvent event) {
-        return event.getServerKickReason().orElse(Component.translatable("kick.generic.disconnect"));
+        return event.getServerKickReason().orElse(Component.translatable("kick.generic.disconnect", Component.text(event.getServer().getServerInfo().getName())));
     }
 
     private Component getKickRedirectMessage(KickedFromServerEvent event) {

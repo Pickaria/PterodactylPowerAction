@@ -78,7 +78,7 @@ public class StartingServer implements ForwardingAudience {
                     } else {
                         result.getReasonComponent().ifPresentOrElse(
                                 (reason) -> messager.error(player, "failed.to.redirect.reason", new Text(serverName), new Text(reason)),
-                                () -> messager.error(player, "failed.to.redirect")
+                                () -> messager.error(player, "failed.to.redirect", new Text(serverName))
                         );
                     }
                 }
