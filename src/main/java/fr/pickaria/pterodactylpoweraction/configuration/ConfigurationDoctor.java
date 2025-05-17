@@ -27,17 +27,39 @@ public class ConfigurationDoctor {
     public void validateConfig(Configuration configuration) {
         boolean isValid = true;
         Map<String, Object> config = configuration.getRawConfig();
+
+        Optional<String> rawApiType = Optional.ofNullable(config.get("type")).map(Object::toString).map(String::toLowerCase);
+        if (rawApiType.isPresent()) {
+            if (!rawApiType.get().equals("pterodactyl") && !rawApiType.get().equals("shell")) {
+                logger.error("Invalid API type '{}'. Must be either 'pterodactyl' or 'shell'.", rawApiType.get());
+                return;
+            }
+        }
+
+        Optional<String> rawPingMethod = Optional.ofNullable(config.get("ping_method")).map(Object::toString).map(String::toLowerCase);
+        if (rawPingMethod.isPresent()) {
+            if (!rawPingMethod.get().equals("pterodactyl") && !rawPingMethod.get().equals("ping")) {
+                logger.error("Invalid ping method '{}'. Must be either 'pterodactyl' or 'ping'.", rawPingMethod.get());
+                return;
+            }
+        }
+
         APIType apiType = configuration.getAPIType();
+        PingMethod pingMethod = configuration.getPingMethod();
         PterodactylAPI pterodactylAPI = new PterodactylAPI(logger, configuration);
 
         // Validate API-specific configuration
-        if (apiType == APIType.PTERODACTYL) {
+        if (apiType == APIType.PTERODACTYL || pingMethod == PingMethod.PTERODACTYL) {
             if (!config.containsKey("pterodactyl_client_api_base_url")) {
-                logger.error("'pterodactyl_client_api_base_url' is missing but required when type is 'pterodactyl'.");
+                logger.error("'pterodactyl_client_api_base_url' is missing but required when type or ping method are 'pterodactyl'.");
                 isValid = false;
             }
+
             Optional<String> apiKeyOpt = configuration.getPterodactylApiKey();
-            if (apiKeyOpt.isEmpty() || !apiKeyOpt.get().startsWith("ptlc_")) {
+            if (apiKeyOpt.isEmpty()) {
+                logger.error("'pterodactyl_api_key' is missing but required when type or ping method are 'pterodactyl'.");
+                isValid = false;
+            } else if (!apiKeyOpt.get().startsWith("ptlc_")) {
                 logger.error("Invalid API key. Please create an API Key from your account's page.");
                 isValid = false;
             }
@@ -60,10 +82,6 @@ public class ConfigurationDoctor {
             Object serversObject = config.get("servers");
             if (serversObject instanceof Map) {
                 Map<String, Object> servers = (Map<String, Object>) serversObject;
-                if (servers.containsKey(waitingServerName)) {
-                    logger.warn("Waiting server '{}' should not be configured in the plugin's configuration. It will be ignored.", waitingServerName);
-                    isValid = false;
-                }
 
                 for (Map.Entry<String, Object> entry : servers.entrySet()) {
                     String key = entry.getKey();

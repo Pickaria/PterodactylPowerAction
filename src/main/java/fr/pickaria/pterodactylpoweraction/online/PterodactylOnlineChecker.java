@@ -43,7 +43,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         // Schedule the timeout to fire an exception if we don't complete in time.
         ScheduledFuture<?> timeoutTask = scheduler.schedule(
-                () -> result.completeExceptionally(new CompletionException(new TimeoutException("Max ping duration exceeded"))),
+                () -> result.completeExceptionally(new CompletionException(new TimeoutException("Timed out waiting for server to start"))),
                 timeout.toMillis(),
                 TimeUnit.MILLISECONDS
         );
