@@ -3,11 +3,16 @@
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/Pickaria/PterodactylPowerAction/.github%2Fworkflows%2Fpush.yml?branch=master)](https://github.com/Pickaria/PterodactylPowerAction/actions)
 [![Latest Release](https://img.shields.io/github/v/release/Pickaria/PterodactylPowerAction)](https://github.com/Pickaria/PterodactylPowerAction/releases)
 [![License](https://img.shields.io/github/license/Pickaria/PterodactylPowerAction)](LICENSE)
+[![Discord](https://img.shields.io/discord/1373364651118694585)](https://discord.gg/M2a9dxJPRy)
 
 A resource-saving Velocity plugin that automatically manages your Minecraft servers by starting them on demand and
 shutting them down when idle, using either the [Pterodactyl](https://pterodactyl.io/) API or shell commands.
 
 ---
+
+## Community & Support
+
+If you have any questions or suggestions, join the [Discord server](https://discord.gg/M2a9dxJPRy)!
 
 ## ✨ Key Features
 
