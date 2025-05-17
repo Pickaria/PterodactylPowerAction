@@ -70,6 +70,7 @@ public class ConnectionListener {
             } else {
                 // Server is not running, inform the player and redirect somewhere else
                 RegisteredServer waitingServer = getWaitingServer();
+                // TODO: If the waiting server is not reachable, we should kick instead
                 event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer));
             }
 
@@ -116,7 +117,6 @@ public class ConnectionListener {
             if (isConnectedToWaitingServer) {
                 event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
             } else {
-                // TODO: If the waiting server is not reachable, we should kick instead
                 event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
             }
             scheduleServerShutdown(event.getServer());

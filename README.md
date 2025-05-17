@@ -1,88 +1,72 @@
 # PterodactylPowerAction
 
-A Velocity plugin to start and stop servers using the [Pterodactyl](https://pterodactyl.io/) client API.
+[![GitHub CI](https://img.shields.io/github/actions/workflow/status/Pickaria/PterodactylPowerAction/.github%2Fworkflows%2Fpush.yml?branch=master)](https://github.com/Pickaria/PterodactylPowerAction/actions)
+[![Latest Release](https://img.shields.io/github/v/release/Pickaria/PterodactylPowerAction)](https://github.com/Pickaria/PterodactylPowerAction/releases)
+[![License](https://img.shields.io/github/license/Pickaria/PterodactylPowerAction)](LICENSE)
 
-## How it works
+A resource-saving Velocity plugin that automatically manages your Minecraft servers by starting them on demand and
+shutting them down when idle, using either the [Pterodactyl](https://pterodactyl.io/) API or shell commands.
 
-This plugin will stop a server after a given delay (1 hour by default) if it is empty after a player left or changed
-server.
+---
 
-When a player tries to connect to a stopped server, they will be redirected to a waiting server such
-as [Limbo](https://www.spigotmc.org/resources/82468/) and will be automatically redirected to the requested server once
-it is started.
+## ✨ Key Features
 
-If the player is already connected on the network, they will simply be informed by a message that they will be
-automatically redirected once the server is ready.
+- 🔌 **Energy & Resource Saving** - Automatically shuts down empty servers after a configurable idle period (default: 1
+  hour)
 
-If the server fails to start, the player will be informed to try again.
+- 🚀 **On-Demand Server Startup** - Starts servers only when players need them, optimizing resource usage
 
-This plugin is also able to redirect your player that has been kicked from a backend server to the waiting server, this
-is toggleable in the configuration file.
+- 🔄 **Seamless Player Experience**:
+    - Redirects players to a lightweight waiting server during startup
+    - Automatically transfers players when their destination server is ready
+    - Keeps players informed with status messages throughout the process
 
-## Configuration
+- 🛡️ **Kick Protection** - Optionally redirects kicked players to your waiting server instead of disconnecting them
 
-The [configuration guide](https://github.com/Pickaria/PterodactylPowerAction/wiki/Configuration-Guide) is available on
-the wiki.
+- 🧰 **Flexible Implementation**:
+    - Works with Pterodactyl Panel API for managed hosting
+    - Supports direct shell commands for self-hosted environments
 
-## In-game Commands
+- ⚙️ **Highly Configurable**:
+    - Customizable shutdown delay
+    - Multiple server status checking methods
+    - Configurable shutdown behavior on proxy restart
 
-The plugin's command require the player to have the `pterodactylpoweraction.use` permission.
+- 🌐 **Multilingual Support** - Automatically translates messages based on the client's language (English, German,
+  French)
 
-### Reload Plugin Configuration
+- 🔍 **Diagnostic Tools** - Built-in doctor command to validate your configuration and troubleshoot issues
 
-To reload the plugin's configuration, use the following command:
+## How it Works
 
-```plaintext
-/pterodactylpoweraction reload
-```
+When a player tries to connect to a stopped server, they're temporarily sent to your waiting server while
+PterodactylPowerAction starts their requested destination. Once the server is ready, they're automatically transferred.
+The plugin monitors player activity and intelligently shuts down empty servers to save resources.
 
-> [!NOTE]
-> If you have added a new server to `velocity.toml`, you will need to reload this configuration as well.
-> Currently, PterodactylPowerAction does not automatically reload Velocity's configuration, so you may require an
-> additional plugin for this functionality.
+![server-is-starting.png](docs/assets/server-is-starting.png)  
+_Shader is Photon._
 
-### Shutdown Empty Servers
+---
 
-To manually shut down empty servers, use the following command:
+## Documentation
 
-```plaintext
-/pterodactylpoweraction clear [delay=0]
-```
+### Configuration
 
-This will check the player count on all servers and send stop signals to all the empty servers after the given delay. If
-not specified, the delay is 0 seconds by default.
+The [configuration guide](docs/configuration.md) is available in this document.
 
-### Run Checks and Validate Configuration
+### In-game Commands
 
-To run checks and validate the configuration, use the following command:
+The [commands guide](docs/commands.md) is available in this document.
 
-```plaintext
-/pterodactylpoweraction doctor
-```
-
-The `doctor` command is a tool for troubleshooting issues with your PterodactylPowerAction setup. It performs a
-series of diagnostic checks to ensure that your configuration files are correctly set up and that all necessary
-components are functioning properly. Running this command can help you identify and resolve potential problems.
-
-## Localization
-
-The plugin's messages are automatically translated based on the client's language. Currently, the following languages
-are supported:
-
-- German
-- English
-- French
+---
 
 ## Waiting/Limbo servers
 
 Here is a small list of recommended lightweights servers software to use as waiting server:
 
-- [Limbo](https://www.spigotmc.org/resources/82468/)
+- [PicoLimbo](https://github.com/Pickaria/PterodactylPowerAction)
 - [NanoLimbo](https://www.spigotmc.org/resources/86198/)
-
-I am also developing my own experimental [PicoLimbo](https://github.com/Quozul/PicoLimbo) server from scratch in Rust.
-It has 0% CPU usage on idle and uses less than 10 MB of memory with minimal network footprint by only implementing the
-required packets.
+- [Limbo](https://www.spigotmc.org/resources/82468/)
 
 Note that the waiting server does not have to be a limbo server specifically, it can be any server as long as it is
 always accessible. If you have a dedicated lobby server in your network, you can use that, no need for a dedicated limbo
@@ -92,6 +76,8 @@ server!
 
 I am running Minecraft servers on dedicated hardware at home, I wanted to save energy costs and memory usage by stopping
 empty servers. Running the waiting server on a low power ARM Single Board Computer can also further save costs.
+
+---
 
 ## Contributing
 

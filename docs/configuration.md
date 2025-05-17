@@ -1,0 +1,138 @@
+# Configuration Guide
+
+This document explains how to configure the PterodactylPowerAction plugin for Velocity, which allows you to
+automatically start and stop Minecraft servers using either the Pterodactyl API or shell commands.
+
+## Configuration File Overview
+
+The configuration file uses YAML format and supports two main modes of operation:
+
+- Pterodactyl API integration
+- Shell command execution
+
+## Basic Configuration Structure
+
+```yaml
+type: "pterodactyl"  # or "shell"
+waiting_server_name: "limbo"
+ping_method: "ping"  # or "pterodactyl"
+maximum_ping_duration: 60
+shutdown_after_duration: 3600
+redirect_to_waiting_server_on_kick: true
+shutdown_behaviour: "shutdown_all"
+```
+
+## Configuration Options
+
+### Common Settings
+
+| Option                               | Description                                                                            | Default Value    | Possible Values                                   |
+|--------------------------------------|----------------------------------------------------------------------------------------|------------------|---------------------------------------------------|
+| `type`                               | The method used to control servers                                                     | Required         | `"pterodactyl"`, `"shell"`                        |
+| `waiting_server_name`                | The server players will be sent to while waiting for their destination server to start | Required         | Any server defined in `velocity.toml`             |
+| `ping_method`                        | Method used to check if a server is running                                            | `"ping"`         | `"ping"`, `"pterodactyl"`                         |
+| `maximum_ping_duration`              | Maximum time (in seconds) to wait for a server to respond                              | `60`             | Any positive integer                              |
+| `shutdown_after_duration`            | Time (in seconds) after which an empty server will be shut down                        | `3600`           | Any positive integer                              |
+| `redirect_to_waiting_server_on_kick` | Whether to redirect players to the waiting server when kicked from a backend server    | `false`          | `true`, `false`                                   |
+| `shutdown_behaviour`                 | What to do with servers when the proxy shuts down                                      | `"shutdown_all"` | `"shutdown_all"`, `"shutdown_empty"`, `"nothing"` |
+
+### Pterodactyl-Specific Settings
+
+When `type` is set to `"pterodactyl"`, the following settings are required:
+
+```yaml
+pterodactyl_api_key: "ptlc_xxx"
+pterodactyl_client_api_base_url: "https://example.com/api/client"
+servers:
+  server_name: "server_id"
+```
+
+| Option                            | Description                                                |
+|-----------------------------------|------------------------------------------------------------|
+| `pterodactyl_api_key`             | Client API key from Pterodactyl panel                      |
+| `pterodactyl_client_api_base_url` | Base URL for the Pterodactyl client API                    |
+| `servers`                         | Mapping of Velocity server names to Pterodactyl server IDs |
+
+### Shell-Specific Settings
+
+When `type` is set to `"shell"`, the following structure is required:
+
+```yaml
+servers:
+  server_name:
+    working_directory: "/path/to/directory"  # Optional
+    start: "command to start server"
+    stop: "command to stop server"
+```
+
+| Option              | Description                               |
+|---------------------|-------------------------------------------|
+| `working_directory` | Directory to run commands from (optional) |
+| `start`             | Command to start the server               |
+| `stop`              | Command to stop the server                |
+
+## Shutdown Behavior Options
+
+The `shutdown_behaviour` setting determines what happens to servers when the proxy shuts down:
+
+| Value              | Description                                     |
+|--------------------|-------------------------------------------------|
+| `"nothing"`        | Keeps all servers running                       |
+| `"shutdown_empty"` | Shuts down only servers with no players         |
+| `"shutdown_all"`   | Shuts down all servers, even those with players |
+
+## Ping Methods
+
+The `ping_method` setting determines how server availability is checked:
+
+| Value           | Description                                                                    |
+|-----------------|--------------------------------------------------------------------------------|
+| `"ping"`        | Uses Velocity's built-in ping mechanism (lighter and usually faster)           |
+| `"pterodactyl"` | Uses the Pterodactyl API (may be more accurate but requires API configuration) |
+
+## Example Configurations
+
+### Pterodactyl Example
+
+```yaml
+type: "pterodactyl"
+pterodactyl_api_key: "ptlc_xxx"
+pterodactyl_client_api_base_url: "https://panel.example.com/api/client"
+servers:
+  survival: "abc123"
+  creative: "def456"
+waiting_server_name: "limbo"
+ping_method: "ping"
+maximum_ping_duration: 60
+shutdown_after_duration: 3600
+redirect_to_waiting_server_on_kick: true
+shutdown_behaviour: "shutdown_empty"
+```
+
+### Shell Example
+
+```yaml
+type: "shell"
+servers:
+  survival:
+    working_directory: "/home/minecraft/servers"
+    start: "docker compose start survival"
+    stop: "docker compose stop survival"
+  creative:
+    working_directory: "/home/minecraft/servers"
+    start: "docker compose start creative"
+    stop: "docker compose stop creative"
+waiting_server_name: "limbo"
+ping_method: "ping"
+maximum_ping_duration: 60
+shutdown_after_duration: 3600
+redirect_to_waiting_server_on_kick: true
+shutdown_behaviour: "shutdown_all"
+```
+
+## Notes and Warnings
+
+- When using Pterodactyl behind a proxy (like CloudFlare DNS proxy), you may encounter connection issues.
+- The `cd` command will not work in shell commands. Use the `working_directory` setting instead.
+- Shell command mode has not been extensively tested on Windows.
+- If you add a new server to `velocity.toml`, you'll need to reload Velocity's configuration separately.
