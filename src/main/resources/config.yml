@@ -1,19 +1,66 @@
-type: "pterodactyl" # Can also be "shell", see the README for more information
-# Create a new client API key which can be found under "Account Settings" then "API Credentials", the URL path should be https://example.com/account/api.
+# SERVER CONTROL METHOD
+# --------------------
+# Choose how the plugin will control your servers:
+#   - "pterodactyl": Use the Pterodactyl Panel API (recommended for panel users)
+#   - "shell": Execute shell commands directly on the host system
+type: "pterodactyl"
+
+# PTERODACTYL CONFIGURATION
+# ------------------------
+# Only required when type is set to "pterodactyl"
+# Create a client API key in your Pterodactyl panel under "Account Settings" > "API Credentials"
+# The URL path should be https://your-panel-domain.com/account/api
 pterodactyl_api_key: "ptlc_xxx"
 pterodactyl_client_api_base_url: "https://example.com/api/client"
+
+# SERVER MAPPINGS
+# --------------
+# Map your Velocity server names to their respective control identifiers:
+# - For Pterodactyl: Use the server's identifier from the panel (found under "Settings" > "Debug Information")
+# - For Shell: Define start/stop commands and optional working directory
 servers:
-  # "survival" is the name of the configured server in your "velocity.toml" file
-  # "Server ID" should be replaced with the identifier of your server in Pterodactyl
-  # The Server ID can be found under the "Debug Information" section in the "Settings" tab of your server
-  survival: "Server ID"
-waiting_server_name: "limbo" # "limbo" is the name of the configured server in your "velocity.toml" file
-# "ping" will ping the server through the Velocity proxy to check if the server is running
-# "pterodactyl" will use the Pterodactyl API instead, you may use this if you encounter issues with the regular ping
-# The ping method is lighter and usually faster, however, the pterodactyl method may be more accurate
-# Note that "pterodactyl_api_key" and "pterodactyl_client_api_base_url" must be configured to use the pterodactyl method
-ping_method: "ping" # can be "ping" or "pterodactyl", defaults to ping
-maximum_ping_duration: 60 # in seconds, defaults to 1 minute
-shutdown_after_duration: 3_600 # in seconds, defaults to 1 hour
-redirect_to_waiting_server_on_kick: true # defaults to false
-shutdown_behaviour: "shutdown_all" # Can be "shutdown_all", "shutdown_empty" or "nothing", defaults to "shutdown_all"
+  # Example for Pterodactyl:
+  survival: "abc123"
+  
+  # Example for Shell (uncomment if using shell type):
+  # survival:
+  #   working_directory: "/path/to/server"  # Optional, defaults to current directory
+  #   start: "docker compose start survival"
+  #   stop: "docker compose stop survival"
+
+# WAITING SERVER CONFIGURATION
+# ---------------------------
+# The server players will be redirected to while their destination server starts
+# This must be a server defined in your velocity.toml configuration
+# Set to null or an invalid server name to disable this feature (players will be kicked instead)
+waiting_server_name: "limbo"
+
+# SERVER STATUS CHECKING
+# ---------------------
+# Method used to determine if a server is running:
+#   - "ping": Uses Velocity's built-in ping (faster, lighter, recommended)
+#   - "pterodactyl": Uses the Pterodactyl API (may be more accurate, requires API configuration)
+ping_method: "ping"
+
+# TIMING SETTINGS
+# --------------
+# Maximum time (in seconds) to wait for a server to respond after starting
+maximum_ping_duration: 60
+
+# Time (in seconds) after which an empty server will be automatically shut down
+# Default: 3600 (1 hour)
+shutdown_after_duration: 3600
+
+# PLAYER HANDLING
+# --------------
+# Whether to redirect players to the waiting server when they're kicked from a backend server
+# Set to false to let them be disconnected normally when kicked
+redirect_to_waiting_server_on_kick: true
+
+# PROXY SHUTDOWN BEHAVIOR
+# ----------------------
+# What to do with servers when the proxy shuts down:
+#   - "shutdown_all": Stop all servers, including those with players (default)
+#   - "shutdown_empty": Only stop servers with no players
+#   - "nothing": Keep all servers running
+shutdown_behaviour: "shutdown_all"
