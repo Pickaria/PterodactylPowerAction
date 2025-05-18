@@ -67,11 +67,12 @@ public class ConnectionListener {
             if (isAlreadyConnected) {
                 // If the player is already connected on the network, we don't want to redirect it to the waiting server
                 event.setResult(ServerPreConnectEvent.ServerResult.denied());
-            } else if (getWaitingServer() != originalServer) {
-                // Server is not running, inform the player and redirect somewhere else
-                RegisteredServer waitingServer = getWaitingServer();
-                if (isReachable(waitingServer)) {
-                    event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer));
+            } else {
+                Optional<RegisteredServer> waitingServer = getWaitingServer();
+
+                if (waitingServer.isPresent() && waitingServer.get() != originalServer && isReachable(waitingServer.get())) {
+                    // Server is not running, inform the player and redirect somewhere else
+                    event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer.get()));
                 } else {
                     // If the waiting server is not reachable, we kick the player instead
                     event.setResult(ServerPreConnectEvent.ServerResult.denied());
@@ -115,23 +116,36 @@ public class ConnectionListener {
     }
 
     private void redirectPlayerToWaitingServerOnKick(KickedFromServerEvent event) {
-        RegisteredServer waitingServer = getWaitingServer();
-        boolean shouldRedirectToWaitingServerOnKick = configurationLoader.getConfiguration().getRedirectToWaitingServerOnKick();
-        boolean isKickedFromWaitingServer = event.getServer() == waitingServer;
+        Optional<RegisteredServer> waitingServerOpt = getWaitingServer();
+
+        // If the waiting server is not available or redirection is disabled, disconnect the player
+        if (waitingServerOpt.isEmpty() || !configurationLoader.getConfiguration().getRedirectToWaitingServerOnKick()) {
+            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(getKickDisconnectMessage(event)));
+            return;
+        }
+
+        RegisteredServer waitingServer = waitingServerOpt.get();
+
+        // If the player was kicked from the waiting server itself, disconnect them
+        if (event.getServer() == waitingServer) {
+            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(getKickDisconnectMessage(event)));
+            return;
+        }
+
+        // Check if the player is already connected to the waiting server
         boolean isConnectedToWaitingServer = event.getPlayer().getCurrentServer()
                 .map(serverConnection -> serverConnection.getServer() == waitingServer)
                 .orElse(false);
 
-        if (shouldRedirectToWaitingServerOnKick && !isKickedFromWaitingServer) {
-            if (isConnectedToWaitingServer) {
-                event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
-            } else {
-                event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
-            }
-            scheduleServerShutdown(event.getServer());
+        if (isConnectedToWaitingServer) {
+            // If already on the waiting server, notify with the kick message
+            event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
         } else {
-            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(getKickDisconnectMessage(event)));
+            // Otherwise redirect to the waiting server
+            event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
         }
+
+        scheduleServerShutdown(event.getServer());
     }
 
     private Component getKickDisconnectMessage(KickedFromServerEvent event) {
@@ -160,14 +174,8 @@ public class ConnectionListener {
         shutdownManager.scheduleShutdown(registeredServer);
     }
 
-    private RegisteredServer getWaitingServer() {
-        String waitingServerName = configurationLoader.getConfiguration().getWaitingServerName();
-        Optional<RegisteredServer> server = proxy.getServer(waitingServerName);
-        if (server.isPresent()) {
-            return server.get();
-        } else {
-            throw new RuntimeException("The configured temporary server '" + waitingServerName + "' is not configured in Velocity. Please check your velocity configuration.");
-        }
+    private Optional<RegisteredServer> getWaitingServer() {
+        return configurationLoader.getConfiguration().getWaitingServerName().flatMap(proxy::getServer);
     }
 
     private boolean isReachable(RegisteredServer server) {

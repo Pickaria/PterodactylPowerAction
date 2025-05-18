@@ -85,8 +85,8 @@ public class YamlConfiguration implements Configuration {
     }
 
     @Override
-    public @NotNull String getWaitingServerName() throws NoSuchElementException, ClassCastException {
-        return getConfigurationString("waiting_server_name");
+    public @NotNull Optional<String> getWaitingServerName() {
+        return getOptionalString("waiting_server_name");
     }
 
     @Override
@@ -109,6 +109,9 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public boolean getRedirectToWaitingServerOnKick() {
+        if (getWaitingServerName().isEmpty()) {
+            return false;
+        }
         String key = "redirect_to_waiting_server_on_kick";
         return config.containsKey(key) ? (boolean) config.get(key) : DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK;
     }

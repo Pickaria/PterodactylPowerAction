@@ -24,7 +24,7 @@ public interface Configuration {
 
     Optional<PowerCommands> getPowerCommands(String serverName);
 
-    String getWaitingServerName();
+    Optional<String> getWaitingServerName();
 
     PingMethod getPingMethod();
 

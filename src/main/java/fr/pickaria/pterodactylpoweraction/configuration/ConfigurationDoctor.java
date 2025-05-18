@@ -66,18 +66,19 @@ public class ConfigurationDoctor {
         }
 
         // Validate waiting server configuration
-        String waitingServerName = configuration.getWaitingServerName();
-        Optional<RegisteredServer> registeredWaitingServer = proxy.getServer(waitingServerName);
+        Optional<String> waitingServerName = configuration.getWaitingServerName();
+        if (waitingServerName.isPresent()) {
+            Optional<RegisteredServer> registeredWaitingServer = proxy.getServer(waitingServerName.get());
 
-        if (registeredWaitingServer.isEmpty()) {
-            logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName);
-            isValid = false;
-        } else if (!isReachable(registeredWaitingServer.get(), configuration)) {
-            logger.warn("Waiting server '{}' is not reachable. Make sure it is always running and accessible.", waitingServerName);
-            isValid = false;
+            if (registeredWaitingServer.isEmpty()) {
+                logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName.get());
+                isValid = false;
+            } else if (!isReachable(registeredWaitingServer.get(), configuration)) {
+                logger.warn("Waiting server '{}' is not reachable. Make sure it is always running and accessible.", waitingServerName.get());
+                isValid = false;
+            }
         }
 
-        // Warn if waiting server is misconfigured in the plugin's own config
         if (config.containsKey("servers")) {
             Object serversObject = config.get("servers");
             if (serversObject instanceof Map) {
