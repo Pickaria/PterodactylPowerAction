@@ -38,9 +38,9 @@ waiting_server_name: "limbo"
 # SERVER STATUS CHECKING
 # ---------------------
 # Method used to determine if a server is running:
-#   - "ping": Uses Velocity's built-in ping (faster, lighter, recommended)
+#   - "ping": Uses Velocity's built-in ping (faster, lighter)
 #   - "pterodactyl": Uses the Pterodactyl API (may be more accurate, requires API configuration)
-ping_method: "ping"
+ping_method: "pterodactyl"
 
 # TIMING SETTINGS
 # --------------

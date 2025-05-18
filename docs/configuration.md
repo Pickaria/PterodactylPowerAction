@@ -113,10 +113,11 @@ type: "pterodactyl"
 pterodactyl_api_key: "ptlc_xxx"
 pterodactyl_client_api_base_url: "https://panel.example.com/api/client"
 servers:
-  survival: "abc123"
-  creative: "def456"
+  limbo: "21b8d887-7d47-4a0b-bbfe-4c4a6318dcf0"
+  survival: "e25eccf6-2bc6-4264-b34a-c8ab02a5c986"
+  creative: "f33b8741-e46c-4386-9281-05eaa2e88333"
 waiting_server_name: "limbo"
-ping_method: "ping"
+ping_method: "pterodactyl"
 maximum_ping_duration: 60
 shutdown_after_duration: 3600
 redirect_to_waiting_server_on_kick: true

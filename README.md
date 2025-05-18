@@ -1,8 +1,8 @@
 # PterodactylPowerAction
 
-[![GitHub CI](https://img.shields.io/github/actions/workflow/status/Pickaria/PterodactylPowerAction/.github%2Fworkflows%2Fpush.yml?branch=master)](https://github.com/Pickaria/PterodactylPowerAction/actions)
-[![Latest Release](https://img.shields.io/github/v/release/Pickaria/PterodactylPowerAction)](https://github.com/Pickaria/PterodactylPowerAction/releases)
-[![License](https://img.shields.io/github/license/Pickaria/PterodactylPowerAction)](LICENSE)
+[![GitHub CI](https://img.shields.io/github/actions/workflow/status/Quozul/PterodactylPowerAction/.github%2Fworkflows%2Fpush.yml?branch=master)](https://github.com/Quozul/PterodactylPowerAction/actions)
+[![Latest Release](https://img.shields.io/github/v/release/Quozul/PterodactylPowerAction)](https://github.com/Quozul/PterodactylPowerAction/releases)
+[![License](https://img.shields.io/github/license/Quozul/PterodactylPowerAction)](LICENSE)
 [![Discord](https://img.shields.io/discord/1373364651118694585)](https://discord.gg/M2a9dxJPRy)
 
 A resource-saving Velocity plugin that automatically manages your Minecraft servers by starting them on demand and
@@ -69,7 +69,7 @@ The [commands guide](docs/commands.md) is available in this document.
 
 Here is a small list of recommended lightweights servers software to use as waiting server:
 
-- [PicoLimbo](https://github.com/Pickaria/PterodactylPowerAction)
+- [PicoLimbo](https://github.com/Quozul/PicoLimbo)
 - [NanoLimbo](https://www.spigotmc.org/resources/86198/)
 - [Limbo](https://www.spigotmc.org/resources/82468/)
 
