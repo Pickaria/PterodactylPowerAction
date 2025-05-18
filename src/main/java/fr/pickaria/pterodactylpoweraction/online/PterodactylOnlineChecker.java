@@ -47,7 +47,7 @@ public class PterodactylOnlineChecker implements OnlineChecker {
      * @param waitUntilRunning if true, will wait until the server is running; if false, will check current status
      * @return CompletableFuture that completes when the server is running or with the current status
      */
-    private CompletableFuture<Void> checkServerStatusViaWebSocket(boolean waitUntilRunning) {
+    private CompletableFuture<Void> checkServerStatusViaWebSocket(boolean waitUntilRunning) throws NoSuchElementException, IllegalArgumentException {
         String serverId = configuration
                 .getPterodactylServerIdentifier(server.getServerInfo().getName())
                 .orElseThrow(() -> new NoSuchElementException("No Pterodactyl server id for " + server.getServerInfo().getName()));

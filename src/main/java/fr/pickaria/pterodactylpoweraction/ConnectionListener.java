@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class ConnectionListener {
@@ -179,7 +180,15 @@ public class ConnectionListener {
     }
 
     private boolean isReachable(RegisteredServer server) {
-        // FIXME: This may be blocking the main thread
-        return configurationLoader.getOnlineChecker(server).isRunningNow();
+        try {
+            // FIXME: This may be blocking the main thread
+            return configurationLoader.getOnlineChecker(server).isRunningNow();
+        } catch (NoSuchElementException exception) {
+            logger.error("Server '{}' does not have its Pterodactyl ID configured in the plugin's configuration", server.getServerInfo().getName(), exception);
+            return false;
+        } catch (IllegalArgumentException exception) {
+            logger.error("The Pterodactyl URL is missing or invalid in the plugin's configuration", exception);
+            return false;
+        }
     }
 }
