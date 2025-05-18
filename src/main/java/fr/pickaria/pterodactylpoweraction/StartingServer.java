@@ -12,20 +12,21 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StartingServer implements ForwardingAudience {
     private final RegisteredServer server;
     private final ConfigurationLoader configurationLoader;
     private final ShutdownManager shutdownManager;
-    private final Set<Player> waitingPlayers = new HashSet<>();
+    private final Set<Player> waitingPlayers = ConcurrentHashMap.newKeySet();
     private final Logger logger;
     private final Messager messager;
-    private boolean isStarting = false;
+    private final AtomicBoolean isStarting = new AtomicBoolean(false);
 
     public StartingServer(RegisteredServer server, ConfigurationLoader configurationLoader, ShutdownManager shutdownManager, Logger logger, Messager messager) {
         this.server = server;
@@ -45,8 +46,7 @@ public class StartingServer implements ForwardingAudience {
     public boolean addPlayer(Player player) {
         boolean added = waitingPlayers.add(player);
 
-        if (!isStarting) {
-            isStarting = true;
+        if (isStarting.compareAndSet(false, true)) {
             String serverName = server.getServerInfo().getName();
             configurationLoader.getAPI().start(serverName).whenComplete((result, exception) -> {
                 if (exception == null) {
@@ -79,7 +79,7 @@ public class StartingServer implements ForwardingAudience {
         } catch (CompletionException | CancellationException | ExecutionException | InterruptedException exception) {
             informError(exception);
         } finally {
-            isStarting = false;
+            isStarting.set(false);
             waitingPlayers.clear();
         }
     }
