@@ -141,7 +141,7 @@ public class ConnectionListener {
         if (isConnectedToWaitingServer) {
             // If already on the waiting server, notify with the kick message
             event.setResult(KickedFromServerEvent.Notify.create(getKickDisconnectMessage(event)));
-        } else {
+        } else if (isReachable(waitingServer)) {
             // Otherwise redirect to the waiting server
             event.setResult(KickedFromServerEvent.RedirectPlayer.create(waitingServer, getKickRedirectMessage(event)));
         }
