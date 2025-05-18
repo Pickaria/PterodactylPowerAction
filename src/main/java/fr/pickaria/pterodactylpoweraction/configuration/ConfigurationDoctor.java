@@ -4,7 +4,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.pickaria.pterodactylpoweraction.Configuration;
 import fr.pickaria.pterodactylpoweraction.api.PterodactylAPI;
-import fr.pickaria.pterodactylpoweraction.online.PingOnlineChecker;
 import org.slf4j.Logger;
 
 import java.nio.file.Files;
@@ -24,7 +23,8 @@ public class ConfigurationDoctor {
         this.logger = logger;
     }
 
-    public void validateConfig(Configuration configuration) {
+    public void validateConfig(ConfigurationLoader configurationLoader) {
+        Configuration configuration = configurationLoader.getConfiguration();
         boolean isValid = true;
         Map<String, Object> config = configuration.getRawConfig();
 
@@ -42,6 +42,11 @@ public class ConfigurationDoctor {
                 logger.error("Invalid ping method '{}'. Must be either 'pterodactyl' or 'ping'.", rawPingMethod.get());
                 return;
             }
+        }
+
+        if (rawApiType.isPresent() && rawPingMethod.isPresent() && rawApiType.get().equals("shell") && rawPingMethod.get().equals("pterodactyl")) {
+            logger.error("Shell API cannot be used with Pterodactyl ping method.");
+            return;
         }
 
         APIType apiType = configuration.getAPIType();
@@ -73,7 +78,10 @@ public class ConfigurationDoctor {
             if (registeredWaitingServer.isEmpty()) {
                 logger.warn("Waiting server '{}' is not configured in 'velocity.toml'.", waitingServerName.get());
                 isValid = false;
-            } else if (!isReachable(registeredWaitingServer.get(), configuration)) {
+            } else if (pingMethod == PingMethod.PTERODACTYL && configuration.getPterodactylServerIdentifier(waitingServerName.get()).isEmpty()) {
+                logger.error("When using the Pterodactyl ping method, the waiting server's ID must be defined in the configuration.");
+                isValid = false;
+            } else if (!configurationLoader.getOnlineChecker(registeredWaitingServer.get()).isRunningNow()) {
                 logger.warn("Waiting server '{}' is not reachable. Make sure it is always running and accessible.", waitingServerName.get());
                 isValid = false;
             }
@@ -110,7 +118,7 @@ public class ConfigurationDoctor {
                                 }
                             }
                         } else {
-                            logger.warn("The server entry must be a string when type is 'pterodactyl'.");
+                            logger.warn("The server '{}' entry must be a string when type is 'pterodactyl'.", key);
                             isValid = false;
                         }
                     } else if (apiType == APIType.SHELL) {
@@ -170,9 +178,5 @@ public class ConfigurationDoctor {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private boolean isReachable(RegisteredServer server, Configuration configuration) {
-        return new PingOnlineChecker(server, configuration).isRunningNow();
     }
 }

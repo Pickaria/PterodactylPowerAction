@@ -90,6 +90,12 @@ The `ping_method` setting determines how server availability is checked:
 | `"ping"`        | Uses Velocity's built-in ping mechanism (lighter and usually faster)           |
 | `"pterodactyl"` | Uses the Pterodactyl API (may be more accurate but requires API configuration) |
 
+**Important notes:**
+
+- When using the `"pterodactyl"` ping method, you must include the waiting server's ID in the `servers` map
+- The `"pterodactyl"` ping method is only compatible with the `"pterodactyl"` type and cannot be used with the `"shell"`
+  type
+
 ## Waiting Server Configuration
 
 The `waiting_server_name` setting determines where players are sent while waiting for their destination server to start:

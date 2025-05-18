@@ -85,7 +85,7 @@ public class PterodactylPowerActionCommand {
         ConfigurationDoctor doctor = new ConfigurationDoctor(proxy, logger);
         CommandSource source = context.getSource();
         messager.info(source, "command.doctor.start");
-        doctor.validateConfig(configurationLoader.getConfiguration());
+        doctor.validateConfig(configurationLoader);
         return Command.SINGLE_SUCCESS;
     }
 
