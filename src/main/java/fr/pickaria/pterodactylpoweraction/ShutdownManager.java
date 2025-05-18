@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class ShutdownManager {
@@ -59,7 +60,7 @@ public class ShutdownManager {
                 PowerActionAPI api = configurationLoader.getAPI();
 
                 for (String serverName : configuration.getAllServers()) {
-                    if (!serverName.equals(configuration.getWaitingServerName())) {
+                    if (!isWaitingServer(serverName)) {
                         api.stop(serverName);
                     }
                 }
@@ -115,6 +116,7 @@ public class ShutdownManager {
     }
 
     private boolean isWaitingServer(String serverName) {
-        return serverName.equals(configurationLoader.getConfiguration().getWaitingServerName());
+        Optional<String> waitingServerName = configurationLoader.getConfiguration().getWaitingServerName();
+        return waitingServerName.isPresent() && serverName.equals(waitingServerName.get());
     }
 }
