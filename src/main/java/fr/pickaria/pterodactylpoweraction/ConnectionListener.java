@@ -67,30 +67,39 @@ public class ConnectionListener {
             if (isAlreadyConnected) {
                 // If the player is already connected on the network, we don't want to redirect it to the waiting server
                 event.setResult(ServerPreConnectEvent.ServerResult.denied());
-            } else {
+            } else if (getWaitingServer() != originalServer) {
                 // Server is not running, inform the player and redirect somewhere else
                 RegisteredServer waitingServer = getWaitingServer();
-                // TODO: If the waiting server is not reachable, we should kick instead
-                event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer));
+                if (isReachable(waitingServer)) {
+                    event.setResult(ServerPreConnectEvent.ServerResult.allowed(waitingServer));
+                } else {
+                    // If the waiting server is not reachable, we kick the player instead
+                    event.setResult(ServerPreConnectEvent.ServerResult.denied());
+                    event.getPlayer().disconnect(Component.translatable("kick.server.starting", Component.text(originalServer.getServerInfo().getName())));
+                }
             }
 
-            String originalServerName = originalServer.getServerInfo().getName();
-            boolean playerAddedToWaitingList;
+            startServerForPlayer(originalServer, event.getPlayer());
+        }
+    }
 
-            // This is cached so that we don't ping the same server for every player that is waiting for it to start
-            if (startingServers.containsKey(originalServerName)) {
-                playerAddedToWaitingList = startingServers.get(originalServerName).addPlayer(event.getPlayer());
-            } else {
-                StartingServer startingServer = new StartingServer(originalServer, configurationLoader, shutdownManager, logger, messager);
-                playerAddedToWaitingList = startingServer.addPlayer(event.getPlayer());
-                startingServers.put(originalServerName, startingServer);
-                // TODO: Should we clear the entry from the map once the server is started?
-            }
+    private void startServerForPlayer(RegisteredServer server, Player player) {
+        String originalServerName = server.getServerInfo().getName();
+        boolean playerAddedToWaitingList;
 
-            if (playerAddedToWaitingList) {
-                Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
-                event.getPlayer().sendMessage(message);
-            }
+        // This is cached so that we don't ping the same server for every player that is waiting for it to start
+        if (startingServers.containsKey(originalServerName)) {
+            playerAddedToWaitingList = startingServers.get(originalServerName).addPlayer(player);
+        } else {
+            StartingServer startingServer = new StartingServer(server, configurationLoader, shutdownManager, logger, messager);
+            playerAddedToWaitingList = startingServer.addPlayer(player);
+            startingServers.put(originalServerName, startingServer);
+            // TODO: Should we clear the entry from the map once the server is started?
+        }
+
+        if (playerAddedToWaitingList) {
+            Component message = messager.format(MessageType.INFO, "starting.server", new Text(Component.text(originalServerName)));
+            player.sendMessage(message);
         }
     }
 
