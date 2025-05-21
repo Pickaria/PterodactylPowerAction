@@ -26,19 +26,19 @@ shutdown_behaviour: "shutdown_all"
 
 ### Common Settings
 
-| Option                               | Description                                                                                                                                                                | Default Value    | Possible Values                                   |
-|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|---------------------------------------------------|
-| `type`                               | The method used to control servers                                                                                                                                         | Required         | `"pterodactyl"`, `"shell"`                        |
-| `waiting_server_name`                | The server players will be sent to while waiting for their destination server to start. Set to `null` or an invalid value to disable this feature and kick players instead | Optional         | Any server defined in `velocity.toml`, `null`     |
-| `ping_method`                        | Method used to check if a server is running                                                                                                                                | `"ping"`         | `"ping"`, `"pterodactyl"`                         |
-| `maximum_ping_duration`              | Maximum time (in seconds) to wait for a server to respond                                                                                                                  | `60`             | Any positive integer                              |
-| `shutdown_after_duration`            | Time (in seconds) after which an empty server will be shut down                                                                                                            | `3600`           | Any positive integer                              |
-| `redirect_to_waiting_server_on_kick` | Whether to redirect players to the waiting server when kicked from a backend server                                                                                        | `false`          | `true`, `false`                                   |
-| `shutdown_behaviour`                 | What to do with servers when the proxy shuts down                                                                                                                          | `"shutdown_all"` | `"shutdown_all"`, `"shutdown_empty"`, `"nothing"` |
+| Option                               | Description                                                                            | Default Value    | Possible Values                                   |
+|--------------------------------------|----------------------------------------------------------------------------------------|------------------|---------------------------------------------------|
+| `type`                               | The method used to control servers                                                     | Required         | `"pterodactyl"`, `"shell"`                        |
+| `waiting_server_name`                | The server players will be sent to while waiting for their destination server to start | Optional         | Any server defined in `velocity.toml`, `null`     |
+| `ping_method`                        | Method used to check if a server is running                                            | `"ping"`         | `"ping"`, `"pterodactyl"`                         |
+| `maximum_ping_duration`              | Maximum time (in seconds) to wait for a server to respond                              | `60`             | Any positive integer                              |
+| `shutdown_after_duration`            | Time (in seconds) after which an empty server will be shut down                        | `3600`           | Any positive integer                              |
+| `redirect_to_waiting_server_on_kick` | Whether to redirect players to the waiting server when kicked from a backend server    | `false`          | `true`, `false`                                   |
+| `shutdown_behaviour`                 | What to do with servers when the proxy shuts down                                      | `"shutdown_all"` | `"shutdown_all"`, `"shutdown_empty"`, `"nothing"` |
 
 ### Pterodactyl-Specific Settings
 
-When `type` is set to `"pterodactyl"`, the following settings are required:
+When `type` or `ping_method` is set to `"pterodactyl"`, the following settings are required:
 
 ```yaml
 pterodactyl_api_key: "ptlc_xxx"
@@ -104,6 +104,14 @@ The `waiting_server_name` setting determines where players are sent while waitin
 - If set to `null` or any invalid server name, the waiting server feature will be disabled and players will be kicked
   from the network with a message that the server is starting instead of being redirected
 
+## Player Handling
+
+The `redirect_to_waiting_server_on_kick` setting determines what to do if the player gets kicked from the backend
+server:
+
+- If set to `true`, the player will be redirected to the waiting server
+- If set to `false`, the player will be kicked from the network anytime the backend server refuses the connection
+
 ## Example Configurations
 
 ### Pterodactyl Example
@@ -120,7 +128,7 @@ waiting_server_name: "limbo"
 ping_method: "pterodactyl"
 maximum_ping_duration: 60
 shutdown_after_duration: 3600
-redirect_to_waiting_server_on_kick: true
+redirect_to_waiting_server_on_kick: false
 shutdown_behaviour: "shutdown_empty"
 ```
 

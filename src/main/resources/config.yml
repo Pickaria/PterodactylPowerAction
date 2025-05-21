@@ -45,6 +45,7 @@ ping_method: "pterodactyl"
 # TIMING SETTINGS
 # --------------
 # Maximum time (in seconds) to wait for a server to respond after starting
+# Default: 60 (1 minute)
 maximum_ping_duration: 60
 
 # Time (in seconds) after which an empty server will be automatically shut down
@@ -55,7 +56,8 @@ shutdown_after_duration: 3600
 # --------------
 # Whether to redirect players to the waiting server when they're kicked from a backend server
 # Set to false to let them be disconnected normally when kicked
-redirect_to_waiting_server_on_kick: true
+# Default: false
+redirect_to_waiting_server_on_kick: false
 
 # PROXY SHUTDOWN BEHAVIOR
 # ----------------------

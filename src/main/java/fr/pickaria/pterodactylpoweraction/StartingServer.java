@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
@@ -101,12 +102,17 @@ public class StartingServer implements ForwardingAudience {
             ConnectionRequestBuilder.Result result = player.createConnectionRequest(server).connect().get();
             if (result.isSuccessful()) {
                 return result.isSuccessful();
-            } else {
+            } else if (configurationLoader.getConfiguration().getRedirectToWaitingServerOnKick()) {
                 result.getReasonComponent().ifPresentOrElse(
                         (reason) -> messager.error(player, "failed.to.redirect.reason", new Text(serverNameComponent), new Text(reason)),
                         () -> messager.error(player, "failed.to.redirect", new Text(serverNameComponent))
                 );
+            } else {
+                Optional<Component> reasonComponent = result.getReasonComponent();
+                Component kickReason = reasonComponent.orElseGet(() -> Component.translatable("failed.to.redirect", serverNameComponent));
+                player.disconnect(kickReason);
             }
+
         } catch (CancellationException | ExecutionException | InterruptedException exception) {
             logger.error("An error occurred while redirecting the player '{}' to the server '{}'", player.getUsername(), serverName, exception);
             messager.error(player, "failed.to.redirect", new Text(serverNameComponent));
