@@ -62,6 +62,11 @@ public class PterodactylPowerAction {
         } catch (IllegalArgumentException e) {
             logger.error("Cannot load the configuration file", e);
         }
+
+        boolean shouldStartWaitingServer = configurationLoader.getConfiguration().shouldStartWaitingServer();
+        if (shouldStartWaitingServer) {
+            startWaitingServer();
+        }
     }
 
     @Subscribe
@@ -84,5 +89,17 @@ public class PterodactylPowerAction {
         PterodactylPowerActionCommand pterodactylPowerActionCommand = new PterodactylPowerActionCommand(proxy, logger, configurationLoader, shutdownManager);
         BrigadierCommand commandToRegister = pterodactylPowerActionCommand.createBrigadierCommand();
         commandManager.register(pterodactylPowerActionCommand.getCommandMeta(commandManager, this), commandToRegister);
+    }
+
+    private void startWaitingServer() {
+        configurationLoader.getConfiguration().getWaitingServerName()
+                .flatMap(proxy::getServer)
+                .ifPresent(server -> {
+                    OnlineChecker onlineChecker = configurationLoader.getOnlineChecker(server);
+                    if (!onlineChecker.isRunningNow()) {
+                        PowerActionAPI api = configurationLoader.getAPI();
+                        api.start(server.getServerInfo().getName());
+                    }
+                });
     }
 }

@@ -35,6 +35,10 @@ servers:
 # Set to null or an invalid server name to disable this feature (players will be kicked instead)
 waiting_server_name: "limbo"
 
+# Whether to automatically start the waiting server when the proxy starts if it's offline
+# Default: true
+start_waiting_server_on_startup: true
+
 # SERVER STATUS CHECKING
 # ---------------------
 # Method used to determine if a server is running:

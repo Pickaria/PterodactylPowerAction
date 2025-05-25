@@ -22,6 +22,7 @@ public class YamlConfiguration implements Configuration {
     private static final int DEFAULT_SHUTDOWN_AFTER_DURATION = 3_600; // in seconds
     private static final int DEFAULT_MAXIMUM_PING_DURATION = 60; // in seconds
     private static final boolean DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK = false;
+    private static final boolean DEFAULT_START_WAITING_SERVER = true;
     private static final PingMethod DEFAULT_PING_METHOD = PingMethod.PING;
 
     public YamlConfiguration(File file, Logger logger) throws IOException {
@@ -46,15 +47,9 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public ShutdownBehaviour getShutdownBehaviour() {
-        try {
-            String shutdownBehaviour = getConfigurationString("shutdown_behaviour");
-            return ShutdownBehaviour.valueOf(shutdownBehaviour.toUpperCase());
-        } catch (NoSuchElementException ignored) {
-            return ShutdownBehaviour.SHUTDOWN_ALL;
-        } catch (IllegalArgumentException | ClassCastException ignored) {
-            logger.warn("Setting 'shutdown_behaviour' does not have a valid value.");
-            return ShutdownBehaviour.SHUTDOWN_ALL;
-        }
+        return getOptionalString("shutdown_behaviour")
+                .map(ShutdownBehaviour::valueOf)
+                .orElse(ShutdownBehaviour.SHUTDOWN_ALL);
     }
 
     @Override
@@ -64,11 +59,8 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public Optional<String> getPterodactylClientApiBaseURL() {
-        try {
-            return Optional.of(removeTrailingSlash(getConfigurationString("pterodactyl_client_api_base_url")));
-        } catch (NoSuchElementException | ClassCastException e) {
-            return Optional.empty();
-        }
+        return getOptionalString("pterodactyl_client_api_base_url")
+                .map(YamlConfiguration::removeTrailingSlash);
     }
 
     @Override
@@ -87,6 +79,14 @@ public class YamlConfiguration implements Configuration {
     @Override
     public @NotNull Optional<String> getWaitingServerName() {
         return getOptionalString("waiting_server_name");
+    }
+
+    @Override
+    public boolean shouldStartWaitingServer() {
+        if (!hasWaitingServer()) {
+            return false;
+        }
+        return getBoolean("start_waiting_server_on_startup", DEFAULT_START_WAITING_SERVER);
     }
 
     @Override
@@ -109,11 +109,10 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public boolean getRedirectToWaitingServerOnKick() {
-        if (getWaitingServerName().isEmpty()) {
+        if (!hasWaitingServer()) {
             return false;
         }
-        String key = "redirect_to_waiting_server_on_kick";
-        return config.containsKey(key) ? (boolean) config.get(key) : DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK;
+        return getBoolean("redirect_to_waiting_server_on_kick", DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK);
     }
 
     @Override
@@ -158,23 +157,30 @@ public class YamlConfiguration implements Configuration {
         throw new NoSuchElementException("Server " + serverName + " not found in the configuration");
     }
 
-    private @NotNull String getConfigurationString(String key) throws NoSuchElementException, ClassCastException {
-        Object configValue = config.get(key);
-        if (configValue == null) {
-            throw new NoSuchElementException("Configuration property " + key + " not found in the configuration");
-        }
-        if (configValue instanceof String) {
-            return (String) configValue;
-        }
-        throw new ClassCastException(key + " must be of type String");
-    }
-
     private Optional<String> getOptionalString(String key) {
-        try {
-            return Optional.of(getConfigurationString(key));
-        } catch (NoSuchElementException | ClassCastException e) {
+        Object value = config.get(key);
+        if (value == null) {
             return Optional.empty();
         }
+        if (value instanceof String stringValue) {
+            return Optional.of(stringValue);
+        }
+        return Optional.empty();
+    }
+
+    private boolean getBoolean(String key, boolean defaultValue) {
+        Object value = config.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean booleanValue) {
+            return booleanValue;
+        }
+        return defaultValue;
+    }
+
+    private boolean hasWaitingServer() {
+        return getWaitingServerName().isPresent();
     }
 
     private static @NotNull String removeTrailingSlash(@NotNull String s) {

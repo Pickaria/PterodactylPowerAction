@@ -26,6 +26,8 @@ public interface Configuration {
 
     Optional<String> getWaitingServerName();
 
+    boolean shouldStartWaitingServer();
+
     PingMethod getPingMethod();
 
     Duration getMaximumPingDuration();

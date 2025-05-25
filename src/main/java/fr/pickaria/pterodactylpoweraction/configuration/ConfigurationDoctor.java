@@ -87,6 +87,12 @@ public class ConfigurationDoctor {
             }
         }
 
+        boolean shouldStartWaitingServer = configuration.shouldStartWaitingServer();
+        if (shouldStartWaitingServer && waitingServerName.isEmpty()) {
+            logger.warn("The plugin is configured to start a waiting server but no waiting server is configured.");
+            isValid = false;
+        }
+
         if (config.containsKey("servers")) {
             Object serversObject = config.get("servers");
             if (serversObject instanceof Map) {
