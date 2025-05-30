@@ -19,8 +19,8 @@ public class YamlConfiguration implements Configuration {
     private final Map<String, Object> config;
     private final Logger logger;
 
-    private static final int DEFAULT_SHUTDOWN_AFTER_DURATION = 3_600; // in seconds
-    private static final int DEFAULT_MAXIMUM_PING_DURATION = 60; // in seconds
+    private static final Duration DEFAULT_SHUTDOWN_AFTER_DURATION = Duration.ofHours(1);
+    private static final Duration DEFAULT_MAXIMUM_PING_DURATION = Duration.ofMinutes(1);
     private static final boolean DEFAULT_REDIRECT_TO_WAITING_SERVER_ON_KICK = false;
     private static final boolean DEFAULT_START_WAITING_SERVER = true;
     private static final PingMethod DEFAULT_PING_METHOD = PingMethod.PING;
@@ -41,13 +41,13 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public APIType getAPIType() throws IllegalArgumentException {
-        String type = (String) config.get("type");
+        String type = getRequired("type", String.class);
         return APIType.valueOf(type.toUpperCase());
     }
 
     @Override
     public ShutdownBehaviour getShutdownBehaviour() {
-        return getOptionalString("shutdown_behaviour")
+        return get("shutdown_behaviour", String.class)
                 .map(String::toUpperCase)
                 .map(ShutdownBehaviour::valueOf)
                 .orElse(ShutdownBehaviour.SHUTDOWN_ALL);
@@ -55,12 +55,12 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public Optional<String> getPterodactylApiKey() {
-        return getOptionalString("pterodactyl_api_key");
+        return get("pterodactyl_api_key", String.class);
     }
 
     @Override
     public Optional<String> getPterodactylClientApiBaseURL() {
-        return getOptionalString("pterodactyl_client_api_base_url")
+        return get("pterodactyl_client_api_base_url", String.class)
                 .map(YamlConfiguration::removeTrailingSlash);
     }
 
@@ -79,7 +79,7 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public @NotNull Optional<String> getWaitingServerName() {
-        return getOptionalString("waiting_server_name");
+        return get("waiting_server_name", String.class);
     }
 
     @Override
@@ -92,20 +92,20 @@ public class YamlConfiguration implements Configuration {
 
     @Override
     public PingMethod getPingMethod() {
-        Optional<String> pingMethod = getOptionalString("ping_method");
-        return pingMethod.map(s -> PingMethod.valueOf(s.toUpperCase())).orElse(DEFAULT_PING_METHOD);
+        return get("ping_method", String.class)
+                .map(String::toUpperCase)
+                .map(PingMethod::valueOf)
+                .orElse(DEFAULT_PING_METHOD);
     }
 
     @Override
     public Duration getMaximumPingDuration() {
-        int seconds = (int) config.getOrDefault("maximum_ping_duration", DEFAULT_MAXIMUM_PING_DURATION);
-        return Duration.ofSeconds(seconds);
+        return getDuration("maximum_ping_duration", DEFAULT_MAXIMUM_PING_DURATION);
     }
 
     @Override
     public Duration getShutdownAfterDuration() {
-        int seconds = (int) config.getOrDefault("shutdown_after_duration", DEFAULT_SHUTDOWN_AFTER_DURATION);
-        return Duration.ofSeconds(seconds);
+        return getDuration("shutdown_after_duration", DEFAULT_SHUTDOWN_AFTER_DURATION);
     }
 
     @Override
@@ -158,26 +158,29 @@ public class YamlConfiguration implements Configuration {
         throw new NoSuchElementException("Server " + serverName + " not found in the configuration");
     }
 
-    private Optional<String> getOptionalString(String key) {
+    public Duration getDuration(String key, Duration defaultValue) {
+        return get(key, Integer.class).map(Duration::ofSeconds).orElse(defaultValue);
+    }
+
+    public boolean getBoolean(String key, boolean defaultValue) {
+        return get(key, Boolean.class).orElse(defaultValue);
+    }
+
+    public <T> Optional<T> get(String key, Class<T> type) {
         Object value = config.get(key);
-        if (value == null) {
-            return Optional.empty();
-        }
-        if (value instanceof String stringValue) {
-            return Optional.of(stringValue);
+        if (type.isInstance(value)) {
+            return Optional.of(type.cast(value));
+        } else if (value == null) {
+            logger.warn("Key '{}' has wrong type, expected {} but got null", key, type.getSimpleName());
+        } else {
+            logger.warn("Key '{}' has wrong type, expected {} but got {}", key, type.getSimpleName(), value.getClass().getSimpleName());
         }
         return Optional.empty();
     }
 
-    private boolean getBoolean(String key, boolean defaultValue) {
-        Object value = config.get(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Boolean booleanValue) {
-            return booleanValue;
-        }
-        return defaultValue;
+    public <T> T getRequired(String key, Class<T> type) throws NoSuchElementException, ClassCastException {
+        return get(key, type)
+                .orElseThrow(() -> new NoSuchElementException("Key " + key + " not found or wrong type"));
     }
 
     private boolean hasWaitingServer() {
