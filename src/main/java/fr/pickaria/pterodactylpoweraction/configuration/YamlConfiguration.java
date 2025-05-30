@@ -48,6 +48,7 @@ public class YamlConfiguration implements Configuration {
     @Override
     public ShutdownBehaviour getShutdownBehaviour() {
         return getOptionalString("shutdown_behaviour")
+                .map(String::toUpperCase)
                 .map(ShutdownBehaviour::valueOf)
                 .orElse(ShutdownBehaviour.SHUTDOWN_ALL);
     }
