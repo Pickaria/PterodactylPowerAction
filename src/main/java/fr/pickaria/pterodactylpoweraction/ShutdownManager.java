@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 public class ShutdownManager {
     private static ShutdownManager instance;
@@ -82,8 +81,8 @@ public class ShutdownManager {
         }
     }
 
-    private CompletableFuture<Boolean> isServerEmpty(RegisteredServer server) {
-        return PingUtils.getPlayerCount(server).thenApply(count -> count == 0);
+    private boolean isServerEmpty(RegisteredServer server) {
+        return server.getPlayersConnected().isEmpty();
     }
 
     private String getServerName(RegisteredServer server) {
@@ -108,11 +107,9 @@ public class ShutdownManager {
     }
 
     private void stopNowIfEmpty(RegisteredServer server) {
-        isServerEmpty(server).thenAccept(isEmpty -> {
-            if (isEmpty) {
-                configurationLoader.getAPI().stop(getServerName(server));
-            }
-        });
+        if (isServerEmpty(server)) {
+            configurationLoader.getAPI().stop(getServerName(server));
+        }
     }
 
     private boolean isWaitingServer(String serverName) {
