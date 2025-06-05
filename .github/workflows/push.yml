@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - '.github/workflows/push.yml'
+      - 'gradle'
+      - 'src/**'
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'settings.gradle'
 
 jobs:
   build:

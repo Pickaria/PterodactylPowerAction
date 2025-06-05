@@ -55,13 +55,8 @@ _Shader is Photon._
 
 ## Documentation
 
-### Configuration
-
-The [configuration guide](docs/configuration.md) is available in this document.
-
-### In-game Commands
-
-The [commands guide](docs/commands.md) is available in this document.
+The documentation is available
+on [the wiki of this GitHub repository](https://github.com/Quozul/PterodactylPowerAction/wiki).
 
 ---
 
